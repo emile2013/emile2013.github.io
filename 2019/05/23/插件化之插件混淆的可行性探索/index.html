@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="1、引言为提高研发效能、业务迭代速度、版本覆盖率等指标，业界选择插件化解决方案的团队不在少数，并且有很好的输出，如手淘，滴滴，爱奇艺。方案要在效率，质量和安全等方面取得平衡。反编译APK发现，很多团队会对插件代码不作混淆处理，其中有一些考虑因素，诸如方便动态部署，快速实现版本覆盖等。如何在兼顾动态部署等需要的同时，对插件代码甚至资源进行混淆，加大逆向分析成本，提高代码安全，我司在去年进行了尝试和探">
+<meta property="og:type" content="article">
+<meta property="og:title" content="插件化之插件混淆的可行性探索">
+<meta property="og:url" content="http://yoursite.com/2019/05/23/插件化之插件混淆的可行性探索/index.html">
+<meta property="og:site_name" content="移动开发那些事">
+<meta property="og:description" content="1、引言为提高研发效能、业务迭代速度、版本覆盖率等指标，业界选择插件化解决方案的团队不在少数，并且有很好的输出，如手淘，滴滴，爱奇艺。方案要在效率，质量和安全等方面取得平衡。反编译APK发现，很多团队会对插件代码不作混淆处理，其中有一些考虑因素，诸如方便动态部署，快速实现版本覆盖等。如何在兼顾动态部署等需要的同时，对插件代码甚至资源进行混淆，加大逆向分析成本，提高代码安全，我司在去年进行了尝试和探">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="https://assets.geilicdn.com/res/b6f8dc13.png">
+<meta property="og:updated_time" content="2019-05-23T09:30:53.203Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="插件化之插件混淆的可行性探索">
+<meta name="twitter:description" content="1、引言为提高研发效能、业务迭代速度、版本覆盖率等指标，业界选择插件化解决方案的团队不在少数，并且有很好的输出，如手淘，滴滴，爱奇艺。方案要在效率，质量和安全等方面取得平衡。反编译APK发现，很多团队会对插件代码不作混淆处理，其中有一些考虑因素，诸如方便动态部署，快速实现版本覆盖等。如何在兼顾动态部署等需要的同时，对插件代码甚至资源进行混淆，加大逆向分析成本，提高代码安全，我司在去年进行了尝试和探">
+<meta name="twitter:image" content="https://assets.geilicdn.com/res/b6f8dc13.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/05/23/插件化之插件混淆的可行性探索/">
+
+
+
+
+
+  <title>插件化之插件混淆的可行性探索 | 移动开发那些事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">移动开发那些事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/05/23/插件化之插件混淆的可行性探索/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="y.huang">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="移动开发那些事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">插件化之插件混淆的可行性探索</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-05-23T17:02:46+08:00">
+                2019-05-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="1、引言"><a href="#1、引言" class="headerlink" title="1、引言"></a>1、引言</h1><p>为提高研发效能、业务迭代速度、版本覆盖率等指标，业界选择插件化解决方案的团队不在少数，并且有很好的输出，如手淘，滴滴，爱奇艺。方案要在效率，质量和安全等方面取得平衡。反编译APK发现，很多团队会对插件代码不作混淆处理，其中有一些考虑因素，诸如方便动态部署，快速实现版本覆盖等。如何在兼顾动态部署等需要的同时，对插件代码甚至资源进行混淆，加大逆向分析成本，提高代码安全，我司在去年进行了尝试和探索，并取得了一定的成效。</p>
+<h1 id="2、插件混淆"><a href="#2、插件混淆" class="headerlink" title="2、插件混淆"></a>2、插件混淆</h1><p>Android插件化，核心在于复杂业务下，宿主和插件类、组件、资源加载等实现，其次是围绕核心实现的诸如插件发包，动态部署，插件混淆，容器安全和监控等周边建设。下图是微店插件化架构示意图。<br><img src="https://assets.geilicdn.com/res/b6f8dc13.png" alt><br>在微店插件化架构中，插件其实是一个APK，与atlas[1]类似，我司把插件伪装成SO包形式，放至APK libs目录中。要实现N+1个 APK（N个插件+1个宿主）的代码混淆一致性，存在以下约束：  </p>
+<ol>
+<li>保持插件之间相关API类代码不被混淆，一个简单的例子，商品详情插件依赖购物车插件相关API类，这些API类最好能不被混淆，否则可能引起类查找等问题；  </li>
+<li>保持一些三方库或基础SDK（微店把三方库和基础SDK暂时放至了宿主中，同时被插件进行provided依赖）被插件引用到的API类最好能不被混淆或apply同份mapping文件，否则可能引起类查找等问题；  </li>
+<li>混淆后的代码，N+1个插件不能存在重复类名，方法和属性，否则会引起类查找等问题； 针对上述问题，我们进行了可行性探索，下面给出实践方案。</li>
+</ol>
+<h3 id="2-1-保持插件之间相关API类代码不被混淆"><a href="#2-1-保持插件之间相关API类代码不被混淆" class="headerlink" title="2.1 保持插件之间相关API类代码不被混淆"></a>2.1 保持插件之间相关API类代码不被混淆</h3><p>保持插件API类代码不被混淆,原始的方法是让业务开发，手动编写progurd配置，这样会带来业务开发效率低下问题。我们的做法是编写一个注解类如@Export,注解了@Export的类会在混淆时进行自动keep。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Export class </span></span><br><span class="line"><span class="meta">@Target</span>(ElementType.TYPE)</span><br><span class="line"><span class="meta">@Retention</span>(RetentionPolicy.RUNTIME)</span><br><span class="line"><span class="meta">@Keep</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Export &#123;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// proguard file   </span></span><br><span class="line">-keep,allowobfuscation <span class="meta">@interface</span> com.weidian.framework.annotation.Export</span><br><span class="line">-keep <span class="meta">@com</span>.weidian.framework.annotation.Export <span class="class"><span class="keyword">class</span> *</span>&#123;*;&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="2-2-保持三方库或基础SDK引用类代码不被混淆"><a href="#2-2-保持三方库或基础SDK引用类代码不被混淆" class="headerlink" title="2.2 保持三方库或基础SDK引用类代码不被混淆"></a>2.2 保持三方库或基础SDK引用类代码不被混淆</h3><p>与插件API类不同，三方库与基础SDK，除了SDK自身声明的混淆规则外，插件可能还会引用可以被混淆的类。在常规架构下，可以被混淆的类，放至插件化场景下，这些类最好被KEEP或N+1个插件apply同份mapping文件。为基础SDK配置@Export注解不太合适，会存在反向依赖，限制了SDK功能以及无法处理三方库。为兼顾效率与质量，我们做了下以尝试：<br>1.编写自动扫描插件源码脚本，为源码中import的类自动生成keep混淆声明，并让APP打包时，包含这些自动生成的混淆脚本。<br>2.编写Gradle Task，在processReleaseResources Task后拿到proguardOutputFile，这个文件中包含了插件在layout中声明的view混淆规则，并让APP打包时，包含这些自动生成的混淆脚本。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">def processResourceTask=project.tasks.getByName(<span class="string">"processReleaseResources"</span>)</span><br><span class="line"><span class="keyword">if</span> (processResourceTask) &#123;</span><br><span class="line">		 processResourceTask.doLast &#123;</span><br><span class="line">		    File rules = processResourceTask.getProguardOutputFile()</span><br><span class="line">		        <span class="keyword">if</span> (rules.exists()) &#123;</span><br><span class="line">		                   <span class="comment">//export file</span></span><br><span class="line">		        &#125;</span><br><span class="line">       &#125;</span><br><span class="line">	 &#125;</span><br></pre></td></tr></table></figure></p>
+<p>在实践过程，我们发现，如果能让N+1个插件apply同份mapping文件 ，APK的大小能减少3-4m左右，不过考虑到其他因素，我们暂时采用了KEEP类代码方案。  </p>
+<h3 id="2-3-插件混淆后的类代码唯一"><a href="#2-3-插件混淆后的类代码唯一" class="headerlink" title="2.3 插件混淆后的类代码唯一"></a>2.3 插件混淆后的类代码唯一</h3><p>保持插件混淆后的类代码唯一性，这个其实progurad[2]已经提供了支持，采用-defaultpackage 或-flattenpackagehierarchy都可以解决代码混淆后冲突问题。我们采用了-flattenpackagehierarchy方式，为每个插件混淆类加入包名前缀。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-defaultpackage renamepakcage 将混淆的类的包名替换</span><br><span class="line">-flattenpackagehierarchye prepackage 将混淆的类包名加上前缀包名</span><br></pre></td></tr></table></figure></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>[1] atlas:<a href="https://github.com/alibaba/atlas" target="_blank" rel="noopener">https://github.com/alibaba/atlas</a><br>[2] proguard:<a href="https://www.guardsquare.com/en/products/proguard/manual/usage" target="_blank" rel="noopener">https://www.guardsquare.com/en/products/proguard/manual/usage</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">y.huang</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1、引言"><span class="nav-number">1.</span> <span class="nav-text">1、引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、插件混淆"><span class="nav-number">2.</span> <span class="nav-text">2、插件混淆</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-保持插件之间相关API类代码不被混淆"><span class="nav-number">2.0.1.</span> <span class="nav-text">2.1 保持插件之间相关API类代码不被混淆</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-保持三方库或基础SDK引用类代码不被混淆"><span class="nav-number">2.0.2.</span> <span class="nav-text">2.2 保持三方库或基础SDK引用类代码不被混淆</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-插件混淆后的类代码唯一"><span class="nav-number">2.0.3.</span> <span class="nav-text">2.3 插件混淆后的类代码唯一</span></a></li></ol></li></ol><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">y.huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
