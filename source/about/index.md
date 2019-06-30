@@ -1,5 +1,5 @@
 ---
-title: about
+title: about me
 date: 2019-06-30 12:38:20
 ---
 # 关于我
@@ -8,5 +8,6 @@ date: 2019-06-30 12:38:20
 # 联系我
 
 微信：
+![](https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/WechatIMG2.jpeg) 
 
 
