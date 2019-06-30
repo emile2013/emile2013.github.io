@@ -107,7 +107,7 @@
 <meta property="og:image" content="https://assets.geilicdn.com/res/538be86.png">
 <meta property="og:image" content="https://assets.geilicdn.com/res/4f8531f2.png">
 <meta property="og:image" content="https://assets.geilicdn.com/res/29f3ac36.png">
-<meta property="og:updated_time" content="2019-06-30T03:22:13.349Z">
+<meta property="og:updated_time" content="2019-06-30T03:25:44.947Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="插件化之启动优化实践">
 <meta name="twitter:description" content="1、引言插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。">
@@ -388,7 +388,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-06-30 11:22:13" itemprop="dateModified" datetime="2019-06-30T11:22:13+08:00">2019-06-30</time>
+                <time title="Modified: 2019-06-30 11:25:44" itemprop="dateModified" datetime="2019-06-30T11:25:44+08:00">2019-06-30</time>
               
             
           </span>
@@ -461,7 +461,7 @@
 </ol>
 <p>在收到华为市场启动时长过长警告后（华为要求电商APP启动时长不能超2s），决定优化启动流程。</p>
 <h1 id="3、优化设计"><a href="#3、优化设计" class="headerlink" title="3、优化设计"></a>3、优化设计</h1><p>针对上章节问题，对流程重构，设计了以下流程。<br><img src="https://assets.geilicdn.com/res/4f8531f2.png" alt><br>插件分为懒加载插件和非懒加载插件，启动时仅对非懒加载插件进行加载，懒加载插件仅做校验等工作。<br>在Application onCreate阶段，不再在主线程执行SDK初始化，在工作线程执行完核心SDK始化后，启动了多个其他工作线程对其余SDK进行操作；<br>在首个Activity onResume中对必须在主线程执行的SDK进行操作；</p>
-<h1 id="3、优化实现"><a href="#3、优化实现" class="headerlink" title="3、优化实现"></a>3、优化实现</h1><p>代码实现其实做了很多工作，这里感谢优秀的团队伙伴，包括ART上首次启动禁用dex2aot优化[1],应用秒开优化[2]。一些核心实现简述如下：</p>
+<h1 id="3、优化实现"><a href="#3、优化实现" class="headerlink" title="3、优化实现"></a>3、优化实现</h1><p>代码实现其实做了很多工作，这里感谢非常优秀的团队伙伴，包括ART上首次启动禁用dex2aot优化[1],应用秒开优化[2]。一些核心实现简述如下：</p>
 <ol>
 <li>ART首次启动优化，主要思路hook runtime-&gt;image_dex2oat_enabled_实现动态禁用dex2aot，由于Android版本多，rom包碎片化，这里涉及到大量的适配工作，主要在于runtime的偏移量矫正； </li>
 <li>在启动后，会在工作进程对所有插件进行dex2aot操作[3]；</li>
