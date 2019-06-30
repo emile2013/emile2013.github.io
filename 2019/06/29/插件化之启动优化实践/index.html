@@ -14,7 +14,7 @@
   
 
 
-<html class="theme-next muse use-motion" lang>
+<html class="theme-next gemini use-motion" lang="zh-Hans">
 <head><meta name="generator" content="Hexo 3.8.0">
   <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -70,7 +70,7 @@
   var NexT = window.NexT || {};
   var CONFIG = {
     root: '/',
-    scheme: 'Muse',
+    scheme: 'Gemini',
     version: '7.1.1',
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
     back2top: true,
@@ -96,22 +96,22 @@
 
 
 
-  <meta name="description" content="1、引言插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。">
+  <meta name="description" content="插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。针对启动">
 <meta name="keywords" content="插件化">
 <meta property="og:type" content="article">
 <meta property="og:title" content="插件化之启动优化实践">
 <meta property="og:url" content="http://yoursite.com/2019/06/29/插件化之启动优化实践/index.html">
-<meta property="og:site_name" content="移动开发那些事">
-<meta property="og:description" content="1、引言插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。">
-<meta property="og:locale" content="default">
-<meta property="og:image" content="https://assets.geilicdn.com/res/538be86.png">
-<meta property="og:image" content="https://assets.geilicdn.com/res/4f8531f2.png">
-<meta property="og:image" content="https://assets.geilicdn.com/res/29f3ac36.png">
-<meta property="og:updated_time" content="2019-06-30T03:25:44.947Z">
+<meta property="og:site_name" content="y.huang&#39;s Blog">
+<meta property="og:description" content="插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。针对启动">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart2.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/29f3ac36.png">
+<meta property="og:updated_time" content="2019-06-30T05:25:46.190Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="插件化之启动优化实践">
-<meta name="twitter:description" content="1、引言插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。">
-<meta name="twitter:image" content="https://assets.geilicdn.com/res/538be86.png">
+<meta name="twitter:description" content="插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。针对启动">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart.png">
 
 
 
@@ -129,7 +129,7 @@
   };
 </script>
 
-  <title>插件化之启动优化实践 | 移动开发那些事</title>
+  <title>插件化之启动优化实践 | y.huang's Blog</title>
   
 
 
@@ -170,7 +170,7 @@
 
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
 
   
   
@@ -188,10 +188,14 @@
     <div class="custom-logo-site-title">
       <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
-        <span class="site-title">移动开发那些事</span>
+        <span class="site-title">y.huang's Blog</span>
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
+    
+      
+        <p class="site-subtitle">Coder</p>
+      
     
     
   </div>
@@ -279,14 +283,28 @@
     <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives</a>
 
   </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-author">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>Author</a>
+
+  </li>
 
       
       
     </ul>
   
-
-  
-    
 
   
 
@@ -308,6 +326,9 @@
     <main id="main" class="main">
       <div class="main-inner">
         <div class="content-wrap">
+          
+            
+
           
           <div id="content" class="content">
             
@@ -332,12 +353,12 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="y.huang">
-      <meta itemprop="description" content>
+      <meta itemprop="description" content="一个需要运动的程序员">
       <meta itemprop="image" content="/images/avatar.gif">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="移动开发那些事">
+      <meta itemprop="name" content="y.huang's Blog">
     </span>
 
     
@@ -388,7 +409,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-06-30 11:25:44" itemprop="dateModified" datetime="2019-06-30T11:25:44+08:00">2019-06-30</time>
+                <time title="Modified: 2019-06-30 13:25:46" itemprop="dateModified" datetime="2019-06-30T13:25:46+08:00">2019-06-30</time>
               
             
           </span>
@@ -440,7 +461,13 @@
       
 
       
-        <h1 id="1、引言"><a href="#1、引言" class="headerlink" title="1、引言"></a>1、引言</h1><p>插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：</p>
+        <p>插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：</p>
+<ol>
+<li>ART Runtime上首次启动，dex2aot耗时问题； </li>
+<li>内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；  </li>
+</ol>
+<p>微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。针对启动时长，我们尝试做了以下优化。<br><a id="more"></a></p>
+<h1 id="1、引言"><a href="#1、引言" class="headerlink" title="1、引言"></a>1、引言</h1><p>插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：</p>
 <ol>
 <li>ART Runtime上首次启动，dex2aot耗时问题； </li>
 <li>内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；  </li>
@@ -451,7 +478,7 @@
 <li>application attachBaseContext阶段：Muitidex处理后，在异步线程，插件框架收集所有静态插件信息（插件文件，插件组件解析）并进行loadDex等操作； </li>
 <li>application onCreate阶段：执行必要的插件以及核心SDK初始化代码,以保证后续功能调用成功，这里的核心SDK包括诸如网络，Crash上报库，埋点库等；  </li>
 <li>activity onStart阶段:这里再细化为主线程和异步线程，执行部分SDK的初始化,比如Fresco；</li>
-<li>activity onWindowFocusChanged阶段:这一阶段执行不太紧急的SDK初始化，比如IM长连接，第三方统计库等。<br><img src="https://assets.geilicdn.com/res/538be86.png" alt> </li>
+<li>activity onWindowFocusChanged阶段:这一阶段执行不太紧急的SDK初始化，比如IM长连接，第三方统计库等。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart.png" alt> </li>
 </ol>
 <p>在这一阶段，已经做到了SDK分层加载，但还是不太理想，主要表现在：</p>
 <ol>
@@ -460,14 +487,14 @@
 <li>在Splash Activity周期函数中执行了SDK初始化代码，这里在绝大数场景下是没问题。但在自动化测试过程，可能不会先跳splash页，会引起由于SDK没初始化，导致异常表现。</li>
 </ol>
 <p>在收到华为市场启动时长过长警告后（华为要求电商APP启动时长不能超2s），决定优化启动流程。</p>
-<h1 id="3、优化设计"><a href="#3、优化设计" class="headerlink" title="3、优化设计"></a>3、优化设计</h1><p>针对上章节问题，对流程重构，设计了以下流程。<br><img src="https://assets.geilicdn.com/res/4f8531f2.png" alt><br>插件分为懒加载插件和非懒加载插件，启动时仅对非懒加载插件进行加载，懒加载插件仅做校验等工作。<br>在Application onCreate阶段，不再在主线程执行SDK初始化，在工作线程执行完核心SDK始化后，启动了多个其他工作线程对其余SDK进行操作；<br>在首个Activity onResume中对必须在主线程执行的SDK进行操作；</p>
+<h1 id="3、优化设计"><a href="#3、优化设计" class="headerlink" title="3、优化设计"></a>3、优化设计</h1><p>针对上章节问题，对流程重构，设计了以下流程。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart2.png" alt><br>插件分为懒加载插件和非懒加载插件，启动时仅对非懒加载插件进行加载，懒加载插件仅做校验等工作。<br>在Application onCreate阶段，不再在主线程执行SDK初始化，在工作线程执行完核心SDK始化后，启动了多个其他工作线程对其余SDK进行操作；<br>在首个Activity onResume中对必须在主线程执行的SDK进行操作；</p>
 <h1 id="3、优化实现"><a href="#3、优化实现" class="headerlink" title="3、优化实现"></a>3、优化实现</h1><p>代码实现其实做了很多工作，这里感谢非常优秀的团队伙伴，包括ART上首次启动禁用dex2aot优化[1],应用秒开优化[2]。一些核心实现简述如下：</p>
 <ol>
 <li>ART首次启动优化，主要思路hook runtime-&gt;image_dex2oat_enabled_实现动态禁用dex2aot，由于Android版本多，rom包碎片化，这里涉及到大量的适配工作，主要在于runtime的偏移量矫正； </li>
 <li>在启动后，会在工作进程对所有插件进行dex2aot操作[3]；</li>
 <li>APP Hook Instrumentation, 在第一个Activity实例化时，如果SDK init工作还未完成，先启动一个HookActivity，等所有工作完成后，再启动业务Splash页；</li>
 </ol>
-<p>经过一系列的优化后，我们拿到了比较理想的数据。从1w的采样数据我们发现，绝大多数启动在2s以内，有一定的量分布在10s以上。10s以上认定为不太正常的统计数据，通过onWindowFocusChanged方式无法适配Push唤醒,黑屏等场景。下一步的想法是只统计launcher程序启动APP时长，忽略其他唤醒方式，异常数据可能会大量减少。<br><img src="https://assets.geilicdn.com/res/29f3ac36.png" alt> </p>
+<p>经过一系列的优化后，我们拿到了比较理想的数据。从1w的采样数据我们发现，绝大多数启动在2s以内，有一定的量分布在10s以上。10s以上认定为不太正常的统计数据，通过onWindowFocusChanged方式无法适配Push唤醒,黑屏等场景。下一步的想法是只统计launcher程序启动APP时长，忽略其他唤醒方式，异常数据可能会大量减少。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/29f3ac36.png" alt> </p>
 <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>[1] art dex2oat 加载加速浅析:<a href="https://fucknmb.com/2018/12/30/art-dex2oat%E5%8A%A0%E8%BD%BD%E5%8A%A0%E9%80%9F%E6%B5%85%E6%9E%90/" target="_blank" rel="noopener">https://fucknmb.com/2018/12/30/art-dex2oat%E5%8A%A0%E8%BD%BD%E5%8A%A0%E9%80%9F%E6%B5%85%E6%9E%90/</a><br>[2] Android端应用秒开优化体验:<a href="http://zhengxiaoyong.com/2016/07/18/Android%E7%AB%AF%E5%BA%94%E7%94%A8%E7%A7%92%E5%BC%80%E4%BC%98%E5%8C%96%E4%BD%93%E9%AA%8C/" target="_blank" rel="noopener">http://zhengxiaoyong.com/2016/07/18/Android%E7%AB%AF%E5%BA%94%E7%94%A8%E7%A7%92%E5%BC%80%E4%BC%98%E5%8C%96%E4%BD%93%E9%AA%8C/</a><br>[3] atlas:<a href="https://github.com/alibaba/atlas" target="_blank" rel="noopener">https://github.com/alibaba/atlas</a>  </p>
 
       
@@ -572,7 +599,7 @@
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <p class="site-author-name" itemprop="name">y.huang</p>
-              <div class="site-description motion-element" itemprop="description"></div>
+              <div class="site-description motion-element" itemprop="description">一个需要运动的程序员</div>
           </div>
 
           
@@ -699,7 +726,7 @@
 
 
 
-  <div class="theme-info">Theme – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.1.1</div>
+  <div class="theme-info">Theme – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.1.1</div>
 
 
 
@@ -787,7 +814,10 @@
   
 
 
-  <script src="/js/schemes/muse.js?v=7.1.1"></script>
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
 
 
 
