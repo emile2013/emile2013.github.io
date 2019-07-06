@@ -107,7 +107,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart2.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/29f3ac36.png">
-<meta property="og:updated_time" content="2019-06-30T14:07:08.647Z">
+<meta property="og:updated_time" content="2019-07-06T02:36:31.565Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="插件化之启动优化实践">
 <meta name="twitter:description" content="插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。针对启动">
@@ -409,7 +409,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-06-30 22:07:08" itemprop="dateModified" datetime="2019-06-30T22:07:08+08:00">2019-06-30</time>
+                <time title="Modified: 2019-07-06 10:36:31" itemprop="dateModified" datetime="2019-07-06T10:36:31+08:00">2019-07-06</time>
               
             
           </span>
@@ -495,12 +495,14 @@
 </ol>
 <p>在收到华为市场启动时长过长警告后（华为要求电商APP启动时长不能超2s），决定优化启动流程。</p>
 <h1 id="3、优化设计"><a href="#3、优化设计" class="headerlink" title="3、优化设计"></a>3、优化设计</h1><p>针对上章节问题，对流程重构，设计了以下流程。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart2.png" alt><br>插件分为懒加载插件和非懒加载插件，启动时仅对非懒加载插件进行加载，懒加载插件仅做校验等工作。<br>在Application onCreate阶段，不再在主线程执行SDK初始化，在工作线程执行完核心SDK始化后，启动了多个其他工作线程对其余SDK进行操作；<br>在首个Activity onResume中对必须在主线程执行的SDK进行操作；</p>
-<h1 id="3、优化实现"><a href="#3、优化实现" class="headerlink" title="3、优化实现"></a>3、优化实现</h1><p>代码实现其实做了很多工作，非常优秀的团队小伙伴实现了包括ART上首次启动禁用dex2aot优化[1],应用秒开优化[2]。一些核心实现简述如下：</p>
+<h1 id="4、优化实现"><a href="#4、优化实现" class="headerlink" title="4、优化实现"></a>4、优化实现</h1><p>代码实现其实做了很多工作，非常优秀的团队小伙伴实现了包括ART上首次启动禁用dex2aot优化[1],应用秒开优化[2]。一些核心实现简述如下：</p>
 <ol>
 <li>ART首次启动优化，主要思路hook runtime-&gt;image_dex2oat_enabled_实现动态禁用dex2aot，由于Android版本多，rom包碎片化，这里涉及到大量的适配工作，主要在于runtime的偏移量矫正； </li>
 <li>在启动后，会在工作进程对所有插件进行dex2aot操作[3]；</li>
-<li>APP Hook Instrumentation, 在第一个Activity实例化时，如果SDK init工作还未完成，先启动一个HookActivity，等所有工作完成后，再启动业务Splash页；</li>
+<li>APP hook instrumentation, 在第一个Activity实例化时，如果SDK init工作还未完成，先启动一个HookedActivity，等所有工作完成后，再启动业务Splash页。</li>
 </ol>
+<p>如果是拦截启动了hookedActivity，一定要在hookedInstrumentation.callActivityOnCreate方法重置theme为hookActivity自身主题，否则可能会抛出异常，原因我们可以看<a href="http://androidxref.com/9.0.0_r3/xref/frameworks/base/core/java/android/app/ActivityThread.java#2808" target="_blank" rel="noopener">ActiviyThread.performLaunchActivity</a>的实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Activity <span class="title">performLaunchActivity</span><span class="params">(ActivityClientRecord r, Intent customIntent)</span> </span>&#123;</span><br><span class="line">.....</span><br><span class="line">      <span class="comment">//r是ActivityRecord,r.activityInfo是从目标activity组件信息里读取的</span></span><br><span class="line">      <span class="keyword">int</span> theme = r.activityInfo.getThemeResource();</span><br><span class="line">      <span class="keyword">if</span> (theme != <span class="number">0</span>) &#123;</span><br><span class="line">                    activity.setTheme(theme);</span><br><span class="line">       &#125;</span><br><span class="line">      activity.mCalled = <span class="keyword">false</span>;</span><br><span class="line">      <span class="keyword">if</span> (r.isPersistable()) &#123;</span><br><span class="line">        mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">       mInstrumentation.callActivityOnCreate(activity, r.state);</span><br><span class="line">       &#125;</span><br><span class="line">                </span><br><span class="line">.....                </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>经过一系列的优化后，我们拿到了比较理想的数据。从1w的采样数据我们发现，绝大多数启动在2s以内，有一定的量分布在10s以上。10s以上认定为不太正常的统计数据，通过onWindowFocusChanged方式无法适配Push唤醒,黑屏等场景。下一步的想法是只统计launcher程序启动APP时长，忽略其他唤醒方式，异常数据可能会大量减少。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/29f3ac36.png" alt> </p>
 <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>[1] art dex2oat 加载加速浅析:<a href="https://fucknmb.com/2018/12/30/art-dex2oat%E5%8A%A0%E8%BD%BD%E5%8A%A0%E9%80%9F%E6%B5%85%E6%9E%90/" target="_blank" rel="noopener">https://fucknmb.com/2018/12/30/art-dex2oat%E5%8A%A0%E8%BD%BD%E5%8A%A0%E9%80%9F%E6%B5%85%E6%9E%90/</a><br>[2] Android端应用秒开优化体验:<a href="http://zhengxiaoyong.com/2016/07/18/Android%E7%AB%AF%E5%BA%94%E7%94%A8%E7%A7%92%E5%BC%80%E4%BC%98%E5%8C%96%E4%BD%93%E9%AA%8C/" target="_blank" rel="noopener">http://zhengxiaoyong.com/2016/07/18/Android%E7%AB%AF%E5%BA%94%E7%94%A8%E7%A7%92%E5%BC%80%E4%BC%98%E5%8C%96%E4%BD%93%E9%AA%8C/</a><br>[3] atlas:<a href="https://github.com/alibaba/atlas" target="_blank" rel="noopener">https://github.com/alibaba/atlas</a>  </p>
 
@@ -692,7 +694,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1、引言"><span class="nav-number">1.</span> <span class="nav-text">1、引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、启动优化"><span class="nav-number">2.</span> <span class="nav-text">2、启动优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、优化设计"><span class="nav-number">3.</span> <span class="nav-text">3、优化设计</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、优化实现"><span class="nav-number">4.</span> <span class="nav-text">3、优化实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1、引言"><span class="nav-number">1.</span> <span class="nav-text">1、引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、启动优化"><span class="nav-number">2.</span> <span class="nav-text">2、启动优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、优化设计"><span class="nav-number">3.</span> <span class="nav-text">3、优化设计</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4、优化实现"><span class="nav-number">4.</span> <span class="nav-text">4、优化实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
             
 
           </div>
