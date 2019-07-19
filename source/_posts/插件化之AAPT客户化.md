@@ -203,7 +203,7 @@ aapt2原生就支持自定义PP段，比如现在的Android App Bundle就用到�
 >--package-id package-id [Specifies the package ID to use for your app. The 
 >package ID that you specify must be greater than or equal to 0x7f unless used in combination with --allow-reserved-package-id.]
 
-但是 在sdk 6,7的aapt2只支持 0x7f-0xff区域的package id值，在8之后就我们添加 --allow-reserved-package-id参数就可以在0x02-0x7f区域。
+但是 在sdk 6,7,8的aapt2只支持 0x7f-0xff区域的package id值，在9之后就我们添加 --allow-reserved-package-id参数就可以在0x02-0x7f区域。
 
 # 简化书写引用宿主资源
 
