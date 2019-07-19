@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="引言这篇文章其实是借花献佛，微店的aapt工作，绝大部分是同事区长编码和验证，文章本意在于对插件化架构中aapt相关流程的总结。在Android编译流程中，aapt主要处理资源相关工作。插件化架构中，需要客户化aapt，让其承担宿主导出符号表、宿主导入符号表、插件导入宿主ap_文件、 修改插件package id、简化书写插件引用宿主资源等额外功能。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="插件化之AAPT客户化">
+<meta property="og:url" content="http://yoursite.com/2019/07/19/插件化之AAPT客户化/index.html">
+<meta property="og:site_name" content="y.huang&#39;s Blog">
+<meta property="og:description" content="引言这篇文章其实是借花献佛，微店的aapt工作，绝大部分是同事区长编码和验证，文章本意在于对插件化架构中aapt相关流程的总结。在Android编译流程中，aapt主要处理资源相关工作。插件化架构中，需要客户化aapt，让其承担宿主导出符号表、宿主导入符号表、插件导入宿主ap_文件、 修改插件package id、简化书写插件引用宿主资源等额外功能。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-07-19T08:02:20.463Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="插件化之AAPT客户化">
+<meta name="twitter:description" content="引言这篇文章其实是借花献佛，微店的aapt工作，绝大部分是同事区长编码和验证，文章本意在于对插件化架构中aapt相关流程的总结。在Android编译流程中，aapt主要处理资源相关工作。插件化架构中，需要客户化aapt，让其承担宿主导出符号表、宿主导入符号表、插件导入宿主ap_文件、 修改插件package id、简化书写插件引用宿主资源等额外功能。">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2019/07/19/插件化之AAPT客户化/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>插件化之AAPT客户化 | y.huang's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">y.huang's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">Coder</p>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-author">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>Author</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/07/19/插件化之AAPT客户化/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="y.huang">
+      <meta itemprop="description" content="一个需要运动的程序员">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="y.huang's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">插件化之AAPT客户化
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-07-19 16:01:21 / Modified: 16:02:20" itemprop="dateCreated datePublished" datetime="2019-07-19T16:01:21+08:00">2019-07-19</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             Views:  
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>这篇文章其实是借花献佛，微店的aapt工作，绝大部分是同事<a href="https://fucknmb.com/about/" target="_blank" rel="noopener">区长</a>编码和验证，文章本意在于对插件化架构中aapt相关流程的总结。<br>在Android编译流程中，aapt主要处理资源相关工作。插件化架构中，需要客户化aapt，让其承担宿主导出符号表、宿主导入符号表、插件导入宿主ap_文件、 修改插件package id、简化书写插件引用宿主资源等额外功能。<br><a id="more"></a></p>
+<h1 id="宿主导出符号表"><a href="#宿主导出符号表" class="headerlink" title="宿主导出符号表"></a>宿主导出符号表</h1><p>宿主导出符号表主要用于：固定资源值；供插件调用宿主资源；aapt和aapt2实现方式不一样。</p>
+<h2 id="aapt方式"><a href="#aapt方式" class="headerlink" title="aapt方式"></a>aapt方式</h2><p>通过aapt link  -P 参数实现。更多参数可通过（aapt –help）查看。</p>
+<blockquote>
+<p>-P  specify where to output public resource definitions  </p>
+</blockquote>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//DSL</span></span><br><span class="line">android &#123;</span><br><span class="line">    aaptOptions &#123;</span><br><span class="line">        additionalParameters <span class="string">"-P"</span>, <span class="string">"$&#123;project.getBuildDir()&#125;/public.xml"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//伪代码</span></span><br><span class="line"> additionalParameters.add(<span class="string">"-P"</span>)</span><br><span class="line"> additionalParameters.add(redirectFile.getAbsolutePath())</span><br><span class="line"> processAndroidResourceTask.doLast &#123;</span><br><span class="line">    <span class="keyword">if</span> (redirectFile.exists()) &#123;</span><br><span class="line">        exportSymbolFile.append(<span class="string">"&lt;?xml version=\"1.0\" encoding=\"utf-8\"?&gt;\n"</span>)</span><br><span class="line">        exportSymbolFile.write(<span class="string">"&lt;!-- AUTO-GENERATED FILE.  DO NOT MODIFY --&gt;\n"</span>)</span><br><span class="line">        exportSymbolFile.append(<span class="string">"&lt;resources&gt;\n"</span>)</span><br><span class="line">        <span class="keyword">def</span> publicXMLNodes = <span class="keyword">new</span> XmlParser().parse(redirectFile)</span><br><span class="line">        publicXMLNodes.each &#123;</span><br><span class="line">                <span class="comment">//这里可以有选择导出，比如只导出style和attr资源</span></span><br><span class="line">                exportSymbolFile.append(<span class="string">"    &lt;public type=\"$&#123;it.@type&#125;\" name=\"$&#123;it.@name&#125;\" id=\"$&#123;it.@id&#125;\" /&gt;\n"</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        exportSymbolFile.append(<span class="string">"&lt;/resources&gt;"</span>)</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>导出文件类似于：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;resources&gt;</span><br><span class="line">   &lt;public type=&quot;attr&quot; name=&quot;barrierAllowsGoneWidgets&quot; id=&quot;0x7f010004&quot; /&gt;</span><br><span class="line">   &lt;public type=&quot;attr&quot; name=&quot;barrierDirection&quot; id=&quot;0x7f010005&quot; /&gt;</span><br><span class="line">&lt;/resources&gt;</span><br></pre></td></tr></table></figure>
+<h2 id="aapt2方式"><a href="#aapt2方式" class="headerlink" title="aapt2方式"></a>aapt2方式</h2><p>通过aapt2 link –emit-ids 参数实现。更多参数可查看<a href="https://developer.android.com/studio/command-line/aapt2#link" target="_blank" rel="noopener">aapt2</a>文档[1]。</p>
+<blockquote>
+<p>–emit-ids Emits a file at the given path with a list of names of resource<br>types and their ID mappings. It is suitable to use with –stable-ids.<br>可以产生资源id文件，可以适用于–stable-ids</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">//DSL</span><br><span class="line">android &#123;</span><br><span class="line">    aaptOptions &#123;</span><br><span class="line">        additionalParameters &quot;--emit-ids&quot;, &quot;$&#123;project.file(&apos;public.txt&apos;)&#125;&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">//伪代码</span><br><span class="line">additionalParameters.add(&quot;--emit-ids&quot;)</span><br><span class="line">additionalParameters.add(redirectFile.getAbsolutePath())</span><br><span class="line">processAndroidResourceTask.doLast &#123;</span><br><span class="line">    if (redirectFile.exists()) &#123;</span><br><span class="line">        Pattern filterPattern = Pattern.compile(&quot;.*?:(.*?)/.*?&quot;)</span><br><span class="line">        List&lt;String&gt; sortedLines = new ArrayList&lt;&gt;()</span><br><span class="line">        redirectFile.eachLine &#123; String line -&gt;</span><br><span class="line">            Matcher matcher = filterPattern.matcher(line)</span><br><span class="line">            if (matcher.matches() &amp;&amp; matcher.groupCount() == 1) &#123;</span><br><span class="line">                //这里可以有选择导出，比如只导出style和attr资源</span><br><span class="line">                exportSymbolFile.append(&quot;$&#123;line&#125;\n&quot;)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>导出文件类似于：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">com.koudai.weidian.buyer:attr/barrierAllowsGoneWidgets = 0x7f010004</span><br><span class="line">com.koudai.weidian.buyer:attr/barrierDirection = 0x7f010005</span><br></pre></td></tr></table></figure>
+<h1 id="宿主导入符号表"><a href="#宿主导入符号表" class="headerlink" title="宿主导入符号表"></a>宿主导入符号表</h1><p>宿主导入符号表主要用于资源ID固定，在patch和插件化中常见。同样aapt和aapt2处理方式有所不同。</p>
+<h2 id="aapt方式-1"><a href="#aapt方式-1" class="headerlink" title="aapt方式"></a>aapt方式</h2><p>aapt与aapt2相比较为简单，我们只要在aapt link(对应 processResouceTask)前（比如 mergeResourceTask或 processManifestTask）把public.xml和ids.xml放到res目录中，参与后续的aapt.link编译就行。</p>
+<p>这里有个知识点：</p>
+<blockquote>
+<p>导入public.xml时，如果public.xml里有id<br>资源，但在values.xml里不存在，要额外新建一个xml文件，在文件里把id定义补上。</p>
+</blockquote>
+<h2 id="aapt2方式-1"><a href="#aapt2方式-1" class="headerlink" title="aapt2方式"></a>aapt2方式</h2><p>aapt2导入public.txt也较为简单，主要利用aapt2 –stable-ids 参数。</p>
+<blockquote>
+<p>–emit-ids path [Emits a file at the given path with a list of names of<br>resource types and their ID mappings. It is suitable to use with–stable-ids.]<br>–stable-ids outputfilename.ext [Consumes the file generated with –emit-ids<br>containing the list of names of resource types and their assigned IDs. This<br>option allows assigned IDs to remain stable even when you delete or add new<br>resources while linking.]</p>
+</blockquote>
+<p>但在插件化架构中，仅仅导入还不行，我们还要将导入的资源打上public flag标,才能供插件引用。打public flag标较为复杂，可参考团队同事写的<a href="https://fucknmb.com/2017/11/15/aapt2%E9%80%82%E9%85%8D%E4%B9%8B%E8%B5%84%E6%BA%90id%E5%9B%BA%E5%AE%9A/#more" target="_blank" rel="noopener">aapt2 适配之资源 id 固定</a>[2] ，其原理是：</p>
+<blockquote>
+<p>aapt2 在compile阶段就为资源打上public标，–stable-ids参数仅让资源参与link。</p>
+</blockquote>
+<h1 id="插件导入宿主ap"><a href="#插件导入宿主ap" class="headerlink" title="插件导入宿主ap_"></a>插件导入宿主ap_</h1><p>插件导入宿主ap_文件，是为了能有效资源共享，在我们的插件化体系中，还有就是解决宿主合并插件Manifest后，透明主题无法动态生效等问题。<br>导入ap_文件,aapt和aapt2实现一致，主要利用-I参数,让ap_文件参与aapt link执行过程，参数说明如下：</p>
+<blockquote>
+<p>-I add an existing package to base include set</p>
+</blockquote>
+<h1 id="修改插件资源packageid"><a href="#修改插件资源packageid" class="headerlink" title="修改插件资源packageid"></a>修改插件资源packageid</h1><p>修改pacakge id，主要是指修改资源的包名id,即0xPPTTEEEE（PackageId+TypeId+EntryId）中的PP段值。在Android体系中，非系统应用，资源PP段都是0x7f。在国内ROM里，资源ID的可分配区间为[0x21,0x7f)[3],主要原因在于：</p>
+<blockquote>
+<p>0x1x为系统保留 0x7f为主apk使用 0x20之前的发现miui里面内部已使用</p>
+</blockquote>
+<p>特别注意是，在联想ZUI ROM系统中，0x4f被占用。PP段固定业界实现有两种：修改二进制文件(arsc文件相关处理)和客户化aapt。二进制文件实现方式有滴滴的<a href="https://github.com/didi/VirtualAPK/wiki" target="_blank" rel="noopener">VirtualAPK</a>,<a href="https://github.com/wequick/Small" target="_blank" rel="noopener">Small</a>等开源实现。我们这里仅讲解aapt实现方式。</p>
+<h2 id="aapt方式-2"><a href="#aapt方式-2" class="headerlink" title="aapt方式"></a>aapt方式</h2><p>aapt修改packageid，需要我们修改aapt源码，业界实现方式大同小异,aapt各版本改动也可能不同。我们以sdk 9的版本为例，简述如何修改,大体思路如下：</p>
+<blockquote>
+<p>加入自定义参数-apk-module，在Main.cpp中获取其值，并在ResourceTypes.cpp中植入。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">//Main.cpp 第一个改动点</span><br><span class="line">int main(int argc, char* const argv[])</span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">    if(strcmp(cp, &quot;-apk-module&quot;) == 0)&#123;</span><br><span class="line">        argc--;</span><br><span class="line">        argv++;</span><br><span class="line">         if (!argc) &#123;</span><br><span class="line">            fprintf(stderr, &quot;ERROR: No argument supplied for &apos;--apk-module&apos; option\n&quot;);</span><br><span class="line">            wantUsage = true;</span><br><span class="line">            goto bail;</span><br><span class="line">        &#125;</span><br><span class="line">        //取得 package id, apkModuleId可以像atlas [4]一样作为一个全局变量存在或保存在一个自定义单例中</span><br><span class="line">        apkModuleId = strtol(argv[0], NULL, 16);</span><br><span class="line">    &#125;</span><br><span class="line">    ...           </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">//ResourceTypes.cpp 第二个改动点</span><br><span class="line">...</span><br><span class="line">DynamicRefTable::DynamicRefTable(uint8_t packageId, bool appAsLib)</span><br><span class="line">    : mAssignedPackageId(packageId)</span><br><span class="line">    , mAppAsLib(appAsLib)</span><br><span class="line">&#123;</span><br><span class="line">    memset(mLookupTable, 0, sizeof(mLookupTable));</span><br><span class="line"></span><br><span class="line">    // Reserved package ids</span><br><span class="line">    mLookupTable[APP_PACKAGE_ID] = APP_PACKAGE_ID;</span><br><span class="line">    mLookupTable[apkModuleId] = apkModuleId;</span><br><span class="line">    mLookupTable[SYS_PACKAGE_ID] = SYS_PACKAGE_ID;</span><br><span class="line">&#125;</span><br><span class="line">...</span><br><span class="line">bool ResTable::stringToValue(Res_value* outValue, String16* outString,</span><br><span class="line">                             const char16_t* s, size_t len,</span><br><span class="line">                             bool preserveSpaces, bool coerceType,</span><br><span class="line">                             uint32_t attrID,</span><br><span class="line">                             const String16* defType,</span><br><span class="line">                             const String16* defPackage,</span><br><span class="line">                             Accessor* accessor,</span><br><span class="line">                             void* accessorCookie,</span><br><span class="line">                             uint32_t attrType,</span><br><span class="line">                             bool enforcePrivate) const</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    //只要在if (packageId != APP_PACKAGE_ID &amp;&amp; packageId != SYS_PACKAGE_ID)的条件语句中加入自定义的packageid判断就行，如下所示</span><br><span class="line">    if (packageId != apkModuleId &amp;&amp; packageId != APP_PACKAGE_ID &amp;&amp;</span><br><span class="line">        packageId != SYS_PACKAGE_ID) &#123;</span><br><span class="line">        ...    </span><br><span class="line">    &#125;</span><br><span class="line">&#125;    </span><br><span class="line"></span><br><span class="line">status_t DynamicRefTable::lookupResourceId(uint32_t* resId) const &#123;</span><br><span class="line">    //与stringToValue函数处理类,相应if语句加入以下逻辑</span><br><span class="line">    if ((packageId == apkModuleId || packageId == APP_PACKAGE_ID) &amp;&amp; !mAppAsLib) &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="aapt2方式-2"><a href="#aapt2方式-2" class="headerlink" title="aapt2方式"></a>aapt2方式</h2><p>aapt2原生就支持自定义PP段，比如现在的Android App Bundle就用到了此功能，其参数定义如下：</p>
+<blockquote>
+<p>–package-id package-id [Specifies the package ID to use for your app. The<br>package ID that you specify must be greater than or equal to 0x7f unless used in combination with –allow-reserved-package-id.]</p>
+</blockquote>
+<p>但是 在sdk 6,7的aapt2只支持 0x7f-0xff区域的package id值，在8之后就我们添加 –allow-reserved-package-id参数就可以在0x02-0x7f区域。</p>
+<h1 id="简化书写引用宿主资源"><a href="#简化书写引用宿主资源" class="headerlink" title="简化书写引用宿主资源"></a>简化书写引用宿主资源</h1><p>插件中引用宿主资源，我们只要把宿主ap_文件参与插件编译即可。但我们在书写资源引用时，与引用android系统资源类似（@packageName:resType/resName），必须带上宿主包名，如 @xxx.xx.xx:color/white。如果我们不重写appt做相应处理，那在IDEA里会容易爆红。<br>解决方法：重写aapt，让业务插件不用书写包名过程，像引用plugin自身资源一样，直接找到资源。</p>
+<h2 id="aapt方式-3"><a href="#aapt方式-3" class="headerlink" title="aapt方式"></a>aapt方式</h2><p>与修改packageid类似，我们加入自定义<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">//Main.cpp 第一个改动点</span><br><span class="line">int main(int argc, char* const argv[])</span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">    if(strcmp(cp, &quot;-host-package&quot;) == 0) == 0)&#123;</span><br><span class="line">        argc--;</span><br><span class="line">        argv++;</span><br><span class="line">        if (!argc) &#123;</span><br><span class="line">            fprintf(stderr, &quot;ERROR: No argument supplied for &apos;--host-package&apos; option\n&quot;);</span><br><span class="line">            wantUsage = true;</span><br><span class="line">            goto bail;</span><br><span class="line">        &#125;</span><br><span class="line">        hostPackage=std::string(argv[0]);</span><br><span class="line">    &#125;</span><br><span class="line">    ...           </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">//ResourceTypes.cpp 第二个改动点</span><br><span class="line">bool ResTable::stringToValue(Res_value* outValue, String16* outString,</span><br><span class="line">                             const char16_t* s, size_t len,</span><br><span class="line">                             bool preserveSpaces, bool coerceType,</span><br><span class="line">                             uint32_t attrID,</span><br><span class="line">                             const String16* defType,</span><br><span class="line">                             const String16* defPackage,</span><br><span class="line">                             Accessor* accessor,</span><br><span class="line">                             void* accessorCookie,</span><br><span class="line">                             uint32_t attrType,</span><br><span class="line">                             bool enforcePrivate) const</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    if (*s == &apos;#&apos;) &#123;</span><br><span class="line">         //末尾</span><br><span class="line">        if (hostPackage.length() &gt; 0 &amp;&amp;</span><br><span class="line">            *defPackage != String16(hostPackage.c_str())) &#123;</span><br><span class="line">            String16 hostPackageName = String16(hostPackage.c_str());</span><br><span class="line">            return stringToValue(outValue, outString, s, len, preserveSpaces, coerceType, attrID, defType,</span><br><span class="line">                                 &amp;hostPackageName,</span><br><span class="line">                                 accessor, accessorCookie, attrType, enforcePrivate);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            if (accessor != NULL) &#123;</span><br><span class="line">                accessor-&gt;reportError(accessorCookie, &quot;No resource found that matches the given name&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    if (*s == &apos;?&apos;) &#123;</span><br><span class="line">         //末尾</span><br><span class="line">        if (hostPackage.length() &gt; 0 &amp;&amp;</span><br><span class="line">            *defPackage != String16(hostPackage.c_str())) &#123;</span><br><span class="line">            String16 hostPackageName = String16(hostPackage.c_str());</span><br><span class="line">            return stringToValue(outValue, outString, s, len, preserveSpaces, coerceType, attrID, defType,</span><br><span class="line">                                 &amp;hostPackageName,</span><br><span class="line">                                 accessor, accessorCookie, attrType, enforcePrivate);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            if (accessor != NULL) &#123;</span><br><span class="line">                accessor-&gt;reportError(accessorCookie, &quot;No resource found that matches the given name&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="aapt2方式-3"><a href="#aapt2方式-3" class="headerlink" title="aapt2方式"></a>aapt2方式</h2><p>与aapt类似，ResourceTypes.cpp和aapt是同个文件，不过入口函数没在Main.cpp里，而是Link.cpp。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">//Link.cpp</span><br><span class="line">int Link(const std::vector&lt;StringPiece&gt;&amp; args, IDiagnostics* diagnostics) &#123;</span><br><span class="line">    ...</span><br><span class="line">    Flags flags =</span><br><span class="line">      Flags()</span><br><span class="line">          .OptionalFlag(&quot;--host-package&quot;,</span><br><span class="line">                        &quot;Specific host packageName for plugin refer resources from host\n&quot;,</span><br><span class="line">                        &amp;host_package)</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>[1] AAPT2 USER GUIDE: <a href="https://developer.android.com/studio/command-line/aapt2#link" target="_blank" rel="noopener">https://developer.android.com/studio/command-line/aapt2#link</a><br>[2] aapt2 适配之资源id固定:<a href="https://fucknmb.com/2017/11/15/aapt2%E9%80%82%E9%85%8D%E4%B9%8B%E8%B5%84%E6%BA%90id%E5%9B%BA%E5%AE%9A/#more" target="_blank" rel="noopener">https://fucknmb.com/2017/11/15/aapt2%E9%80%82%E9%85%8D%E4%B9%8B%E8%B5%84%E6%BA%90id%E5%9B%BA%E5%AE%9A/#more</a><br>[3] Atlas 中文文档手册 :<a href="https://www.bookstack.cn/read/atlas-zh/atlas-docs-guide-for-use-guide_for_build.md" target="_blank" rel="noopener">https://www.bookstack.cn/read/atlas-zh/atlas-docs-guide-for-use-guide_for_build.md</a><br>[4] Atlas-aapt: <a href="https://github.com/alibaba/atlas/blob/master/atlas-aapt/README.zh-cn.md" target="_blank" rel="noopener">https://github.com/alibaba/atlas/blob/master/atlas-aapt/README.zh-cn.md</a>  </p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/06/29/插件化之启动优化实践/" rel="next" title="插件化之启动优化实践">
+                <i class="fa fa-chevron-left"></i> 插件化之启动优化实践
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">y.huang</p>
+              <div class="site-description motion-element" itemprop="description">一个需要运动的程序员</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">3</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#宿主导出符号表"><span class="nav-number">2.</span> <span class="nav-text">宿主导出符号表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#aapt方式"><span class="nav-number">2.1.</span> <span class="nav-text">aapt方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#aapt2方式"><span class="nav-number">2.2.</span> <span class="nav-text">aapt2方式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#宿主导入符号表"><span class="nav-number">3.</span> <span class="nav-text">宿主导入符号表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#aapt方式-1"><span class="nav-number">3.1.</span> <span class="nav-text">aapt方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#aapt2方式-1"><span class="nav-number">3.2.</span> <span class="nav-text">aapt2方式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#插件导入宿主ap"><span class="nav-number">4.</span> <span class="nav-text">插件导入宿主ap_</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#修改插件资源packageid"><span class="nav-number">5.</span> <span class="nav-text">修改插件资源packageid</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#aapt方式-2"><span class="nav-number">5.1.</span> <span class="nav-text">aapt方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#aapt2方式-2"><span class="nav-number">5.2.</span> <span class="nav-text">aapt2方式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#简化书写引用宿主资源"><span class="nav-number">6.</span> <span class="nav-text">简化书写引用宿主资源</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#aapt方式-3"><span class="nav-number">6.1.</span> <span class="nav-text">aapt方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#aapt2方式-3"><span class="nav-number">6.2.</span> <span class="nav-text">aapt2方式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">7.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">y.huang</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.1.1</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="Total Visitors">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="Total Views">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
