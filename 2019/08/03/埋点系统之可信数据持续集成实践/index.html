@@ -104,10 +104,14 @@
 <meta property="og:site_name" content="y.huang&#39;s Blog">
 <meta property="og:description" content="引言埋点数据，必须是准确的、完备的，否则无法为上层BI产品提供可信数据。端数据采集方案可简单归类为手动埋点、可视化埋点以及无痕埋点三大类。在高DAU APP中，要完全脱离手动埋点，实行无痕埋点方案，在网络带宽、数据存储等方面会带来一定的压力。我司目前停留在手动埋点阶段，在实践过程，我们发现，由于手动埋点依赖上层业务开发人员，也较容易出现漏埋和错埋，并且错误数据的发现存在滞后性，往往在BI输出产品阶">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-08-03T15:48:10.882Z">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/splash.png?raw=true">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/filter.png?raw=true">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/state.png?raw=true">
+<meta property="og:updated_time" content="2019-08-03T16:02:34.291Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="埋点系统之可信数据采集持续集成实践">
 <meta name="twitter:description" content="引言埋点数据，必须是准确的、完备的，否则无法为上层BI产品提供可信数据。端数据采集方案可简单归类为手动埋点、可视化埋点以及无痕埋点三大类。在高DAU APP中，要完全脱离手动埋点，实行无痕埋点方案，在网络带宽、数据存储等方面会带来一定的压力。我司目前停留在手动埋点阶段，在实践过程，我们发现，由于手动埋点依赖上层业务开发人员，也较容易出现漏埋和错埋，并且错误数据的发现存在滞后性，往往在BI输出产品阶">
+<meta name="twitter:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/splash.png?raw=true">
 
 
 
@@ -388,12 +392,24 @@
                 
               
 
-              <time title="Created: 2019-08-03 16:53:27 / Modified: 23:48:10" itemprop="dateCreated datePublished" datetime="2019-08-03T16:53:27+08:00">2019-08-03</time>
+              <time title="Created: 2019-08-03 16:53:27" itemprop="dateCreated datePublished" datetime="2019-08-03T16:53:27+08:00">2019-08-03</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-08-04 00:02:34" itemprop="dateModified" datetime="2019-08-04T00:02:34+08:00">2019-08-04</time>
               
             
           </span>
@@ -465,10 +481,10 @@
 </blockquote>
 <h1 id="埋点管理平台"><a href="#埋点管理平台" class="headerlink" title="埋点管理平台"></a>埋点管理平台</h1><p>埋点管理平台承载以下基础功能：<br>1、规范和约束事件定义；<br>2、业务埋点持续集成，BI编辑埋点、开发查看变更埋点和测试人工/自动化测试埋点；<br>3、业务埋点测试辅助，如埋点回归验证；<br>4、基于规范化埋点管理，输出数据相关服务，如 kibana自动化查询业务数据需求；  </p>
 <p>本文我们只关注，如果让数据开发与验收成为我们持续集成流程中的不可或缺的一环。</p>
-<h2 id="埋点流程"><a href="#埋点流程" class="headerlink" title="埋点流程"></a>埋点流程</h2><p>在APP版本研发前，产品同学会提出需求，以及他们所关心的数据。BI同学会与产品同学沟通，输出必要的业务埋点事件，同时录入埋点管理平台，如下图<br>//插图<br>埋点管理平台，提供埋点查询与过滤功能。例如，我们提供APP版本、开发同学归属的埋点、埋点所处页面，区块等过滤条件；我们用颜色区分埋点事件的状态，如红色标识为变更埋点，黄色标识为新增埋点等；通过各纬度，尽量让开发和测试学生能快速找到当前要发布的版本，需要研发的业务埋点；<br>//插图<br>开发同学收到埋点通知后，进行埋点开发，自测通过后在埋点管理平台进行开发状态确认；测试同学收到埋点开发完成通知，进行埋点测试与校验。<br>//插图</p>
+<h2 id="埋点流程"><a href="#埋点流程" class="headerlink" title="埋点流程"></a>埋点流程</h2><p>在APP版本研发前，产品同学会提出需求，以及他们所关心的数据。BI同学会与产品同学沟通，输出必要的业务埋点事件，同时录入埋点管理平台，如下图<br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/splash.png?raw=true" alt><br>埋点管理平台，提供埋点查询与过滤功能。例如，我们提供APP版本、开发同学归属的埋点、埋点所处页面，区块等过滤条件；我们用颜色区分埋点事件的状态，如红色标识为变更埋点，黄色标识为新增埋点等；通过各纬度，尽量让开发和测试学生能快速找到当前要发布的版本，需要研发的业务埋点；<br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/filter.png?raw=true" alt><br>开发同学收到埋点通知后，进行埋点开发，自测通过后在埋点管理平台进行开发状态确认；测试同学收到埋点开发完成通知，进行埋点测试与校验。<br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/state.png?raw=true" alt> </p>
 <p>通过埋点录入、埋点开发和校验，能极大减少漏埋和错埋的案例发生。</p>
 <h1 id="手持端数据校验"><a href="#手持端数据校验" class="headerlink" title="手持端数据校验"></a>手持端数据校验</h1><p>通过埋点管理平台，也不能说完全杜绝了漏埋和错埋，比如特殊场景下，es数据消费阻塞了，开发和测试同学无法在浏览器端进行校验，这时就要在手持端进行校验工作了。</p>
-<p>手持端可视化埋点工具,要做到不能阻塞APP操作，以及要实时显示埋点数据以及数据汇总查询。借助<a href="https://github.com/hyperion-project" target="_blank" rel="noopener">hyperion</a>以及埋点SDK提供的功能，我们实现了最初的想法。部分截图如下：<br>//插图</p>
+<p>手持端可视化埋点工具,要做到不能阻塞APP操作，以及要实时显示埋点数据以及数据汇总查询。借助<a href="https://github.com/hyperion-project" target="_blank" rel="noopener">hyperion</a>以及埋点SDK提供的功能，我们实现了最初的想法。部分截图如下：  </p>
 <h1 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h1><p>埋点这块，有很多可以和大家讨论的点，比如埋点SDK上报流程设计、前端与后台数据存储、实时和离线数据分析与利用。本文只是一个起点，后续会陆续分享出来，我们现在的一些玩法，不一定是最优的，但是都是我们的一些实践。</p>
 
       
