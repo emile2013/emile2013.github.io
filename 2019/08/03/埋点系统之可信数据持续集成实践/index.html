@@ -96,20 +96,18 @@
 
 
 
-  <meta name="description" content="1、引言为提高研发效能、业务迭代速度、版本覆盖率等指标，业界选择插件化解决方案的团队不在少数，并且有很好的输出，如手淘，滴滴，爱奇艺。方案要在效率，质量和安全等方面取得平衡。反编译APK发现，很多团队会对插件代码不作混淆处理，其中有一些考虑因素，诸如方便动态部署，快速实现版本覆盖等。如何在兼顾动态部署等需要的同时，对插件代码甚至资源进行混淆，加大逆向分析成本，提高代码安全，我司在去年进行了尝试和探">
-<meta name="keywords" content="插件化">
+  <meta name="description" content="引言埋点数据，必须是准确的、完备的，否则无法为上层BI产品提供可信数据。端数据采集方案可简单归类为手动埋点、可视化埋点以及无痕埋点三大类。在高DAU APP中，要完全脱离手动埋点，实行无痕埋点方案，在网络带宽、数据存储等方面会带来一定的压力。我司目前停留在手动埋点阶段，在实践过程，我们发现，由于手动埋点依赖上层业务开发人员，也较容易出现漏埋和错埋，并且错误数据的发现存在滞后性，往往在BI输出产品阶">
+<meta name="keywords" content="埋点系统">
 <meta property="og:type" content="article">
-<meta property="og:title" content="插件化之插件混淆的可行性探索">
-<meta property="og:url" content="http://yoursite.com/2019/05/23/插件化之插件混淆的可行性探索/index.html">
+<meta property="og:title" content="埋点系统之可信数据采集持续集成实践">
+<meta property="og:url" content="http://yoursite.com/2019/08/03/埋点系统之可信数据持续集成实践/index.html">
 <meta property="og:site_name" content="y.huang&#39;s Blog">
-<meta property="og:description" content="1、引言为提高研发效能、业务迭代速度、版本覆盖率等指标，业界选择插件化解决方案的团队不在少数，并且有很好的输出，如手淘，滴滴，爱奇艺。方案要在效率，质量和安全等方面取得平衡。反编译APK发现，很多团队会对插件代码不作混淆处理，其中有一些考虑因素，诸如方便动态部署，快速实现版本覆盖等。如何在兼顾动态部署等需要的同时，对插件代码甚至资源进行混淆，加大逆向分析成本，提高代码安全，我司在去年进行了尝试和探">
+<meta property="og:description" content="引言埋点数据，必须是准确的、完备的，否则无法为上层BI产品提供可信数据。端数据采集方案可简单归类为手动埋点、可视化埋点以及无痕埋点三大类。在高DAU APP中，要完全脱离手动埋点，实行无痕埋点方案，在网络带宽、数据存储等方面会带来一定的压力。我司目前停留在手动埋点阶段，在实践过程，我们发现，由于手动埋点依赖上层业务开发人员，也较容易出现漏埋和错埋，并且错误数据的发现存在滞后性，往往在BI输出产品阶">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/b6f8dc13.png">
-<meta property="og:updated_time" content="2019-07-19T08:05:28.907Z">
+<meta property="og:updated_time" content="2019-08-03T15:48:10.882Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="插件化之插件混淆的可行性探索">
-<meta name="twitter:description" content="1、引言为提高研发效能、业务迭代速度、版本覆盖率等指标，业界选择插件化解决方案的团队不在少数，并且有很好的输出，如手淘，滴滴，爱奇艺。方案要在效率，质量和安全等方面取得平衡。反编译APK发现，很多团队会对插件代码不作混淆处理，其中有一些考虑因素，诸如方便动态部署，快速实现版本覆盖等。如何在兼顾动态部署等需要的同时，对插件代码甚至资源进行混淆，加大逆向分析成本，提高代码安全，我司在去年进行了尝试和探">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/b6f8dc13.png">
+<meta name="twitter:title" content="埋点系统之可信数据采集持续集成实践">
+<meta name="twitter:description" content="引言埋点数据，必须是准确的、完备的，否则无法为上层BI产品提供可信数据。端数据采集方案可简单归类为手动埋点、可视化埋点以及无痕埋点三大类。在高DAU APP中，要完全脱离手动埋点，实行无痕埋点方案，在网络带宽、数据存储等方面会带来一定的压力。我司目前停留在手动埋点阶段，在实践过程，我们发现，由于手动埋点依赖上层业务开发人员，也较容易出现漏埋和错埋，并且错误数据的发现存在滞后性，往往在BI输出产品阶">
 
 
 
@@ -117,7 +115,7 @@
 
   
   
-  <link rel="canonical" href="http://yoursite.com/2019/05/23/插件化之插件混淆的可行性探索/">
+  <link rel="canonical" href="http://yoursite.com/2019/08/03/埋点系统之可信数据持续集成实践/">
 
 
 
@@ -127,7 +125,7 @@
   };
 </script>
 
-  <title>插件化之插件混淆的可行性探索 | y.huang's Blog</title>
+  <title>埋点系统之可信数据采集持续集成实践 | y.huang's Blog</title>
   
 
 
@@ -347,7 +345,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/05/23/插件化之插件混淆的可行性探索/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/08/03/埋点系统之可信数据持续集成实践/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="y.huang">
@@ -364,7 +362,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">插件化之插件混淆的可行性探索
+          <h1 class="post-title" itemprop="name headline">埋点系统之可信数据采集持续集成实践
 
               
             
@@ -390,24 +388,12 @@
                 
               
 
-              <time title="Created: 2019-05-23 18:49:25" itemprop="dateCreated datePublished" datetime="2019-05-23T18:49:25+08:00">2019-05-23</time>
+              <time title="Created: 2019-08-03 16:53:27 / Modified: 23:48:10" itemprop="dateCreated datePublished" datetime="2019-08-03T16:53:27+08:00">2019-08-03</time>
             
 
             
               
 
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2019-07-19 16:05:28" itemprop="dateModified" datetime="2019-07-19T16:05:28+08:00">2019-07-19</time>
               
             
           </span>
@@ -466,19 +452,24 @@
       
 
       
-        <h1 id="1、引言"><a href="#1、引言" class="headerlink" title="1、引言"></a>1、引言</h1><p>为提高研发效能、业务迭代速度、版本覆盖率等指标，业界选择插件化解决方案的团队不在少数，并且有很好的输出，如手淘，滴滴，爱奇艺。方案要在效率，质量和安全等方面取得平衡。反编译APK发现，很多团队会对插件代码不作混淆处理，其中有一些考虑因素，诸如方便动态部署，快速实现版本覆盖等。如何在兼顾动态部署等需要的同时，对插件代码甚至资源进行混淆，加大逆向分析成本，提高代码安全，我司在去年进行了尝试和探索，并取得了一定的成效。<br><a id="more"></a></p>
-<h1 id="2、插件混淆"><a href="#2、插件混淆" class="headerlink" title="2、插件混淆"></a>2、插件混淆</h1><p>Android插件化，核心在于复杂业务下，宿主和插件类、组件、资源加载等实现，其次是围绕核心实现的诸如插件发包，动态部署，插件混淆，容器安全和监控等周边建设。下图是微店插件化架构示意图。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/b6f8dc13.png" alt><br>在微店插件化架构中，插件其实是一个APK，与atlas[1]类似，我司把插件伪装成SO包形式，放至APK libs目录中。要实现N+1个 APK（N个插件+1个宿主）的代码混淆一致性，存在以下约束：  </p>
+        <h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>埋点数据，必须是准确的、完备的，否则无法为上层BI产品提供可信数据。端数据采集方案可简单归类为手动埋点、可视化埋点以及无痕埋点三大类。在高DAU APP中，要完全脱离手动埋点，实行无痕埋点方案，在网络带宽、数据存储等方面会带来一定的压力。我司目前停留在手动埋点阶段，在实践过程，我们发现，由于手动埋点依赖上层业务开发人员，也较容易出现漏埋和错埋，并且错误数据的发现存在滞后性，往往在BI输出产品阶段才被发现。<br>为保证数据的可靠性，以及尽量减少开发人员对埋点的工作投入，我们做了以下几方面工作：  </p>
 <ol>
-<li>保持插件之间相关API类代码不被混淆，一个简单的例子，商品详情插件依赖购物车插件相关API类，这些API类最好能不被混淆，否则可能引起类查找等问题；  </li>
-<li>保持一些三方库或基础SDK（微店把三方库和基础SDK暂时放至了宿主中，同时被插件进行provided依赖）被插件引用到的API类最好能不被混淆或apply同份mapping文件，否则可能引起类查找等问题；  </li>
-<li>混淆后的代码，N+1个插件不能存在重复类名，方法和属性，否则会引起类查找等问题； 针对上述问题，我们进行了可行性探索，下面给出实践方案。</li>
+<li>在浏览器端，提供埋点管理平台，为BI、测试、开发等角色提供事件定义、埋点版本追踪、数据验收、数据回归测试等持续集成功能；  </li>
+<li>在手持端，在APP中嵌入可视化埋点工具，为开发与测试同学提供实时数据校验功能；  </li>
+<li>简化开发同学编码：控件点击、页面曝光只需一行代码；页面等事件无需开发同学关注，埋点SDK自动上报并补全设备和用户信息；  <a id="more"></a>
+</li>
 </ol>
-<h3 id="2-1-保持插件之间相关API类代码不被混淆"><a href="#2-1-保持插件之间相关API类代码不被混淆" class="headerlink" title="2.1 保持插件之间相关API类代码不被混淆"></a>2.1 保持插件之间相关API类代码不被混淆</h3><p>保持插件API类代码不被混淆,原始的方法是让业务开发，手动编写progurd配置，这样会带来业务开发效率低下问题。我们的做法是编写一个注解类如@Export,注解了@Export的类会在混淆时进行自动keep。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Export class </span></span><br><span class="line"><span class="meta">@Target</span>(ElementType.TYPE)</span><br><span class="line"><span class="meta">@Retention</span>(RetentionPolicy.RUNTIME)</span><br><span class="line"><span class="meta">@Keep</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Export &#123;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// proguard file   </span></span><br><span class="line">-keep,allowobfuscation <span class="meta">@interface</span> com.weidian.framework.annotation.Export</span><br><span class="line">-keep <span class="meta">@com</span>.weidian.framework.annotation.Export <span class="class"><span class="keyword">class</span> *</span>&#123;*;&#125;</span><br></pre></td></tr></table></figure></p>
-<h3 id="2-2-保持三方库或基础SDK引用类代码不被混淆"><a href="#2-2-保持三方库或基础SDK引用类代码不被混淆" class="headerlink" title="2.2 保持三方库或基础SDK引用类代码不被混淆"></a>2.2 保持三方库或基础SDK引用类代码不被混淆</h3><p>与插件API类不同，三方库与基础SDK，除了SDK自身声明的混淆规则外，插件可能还会引用可以被混淆的类。在常规架构下，可以被混淆的类，放至插件化场景下，这些类最好被KEEP或N+1个插件apply同份mapping文件。为基础SDK配置@Export注解不太合适，会存在反向依赖，限制了SDK功能以及无法处理三方库。为兼顾效率与质量，我们做了下以尝试：<br>1.编写自动扫描插件源码脚本，为源码中import的类自动生成keep混淆声明，并让APP打包时，包含这些自动生成的混淆脚本。(现通过Dexdeps方式查找插件中引用的非打进包中的类和方法[2])<br>2.编写Gradle Task，在processReleaseResources Task后拿到proguardOutputFile，这个文件中包含了插件在layout中声明的view混淆规则，并让APP打包时，包含这些自动生成的混淆脚本。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">def processResourceTask=project.tasks.getByName(<span class="string">"processReleaseResources"</span>)</span><br><span class="line"><span class="keyword">if</span> (processResourceTask) &#123;</span><br><span class="line">		 processResourceTask.doLast &#123;</span><br><span class="line">		    File rules = processResourceTask.getProguardOutputFile()</span><br><span class="line">		        <span class="keyword">if</span> (rules.exists()) &#123;</span><br><span class="line">		                   <span class="comment">//export file</span></span><br><span class="line">		        &#125;</span><br><span class="line">       &#125;</span><br><span class="line">	 &#125;</span><br></pre></td></tr></table></figure></p>
-<p>在实践过程，我们发现，如果能让N+1个插件apply同份mapping文件 ，APK的大小能减少3-4m左右，不过考虑到其他因素，我们暂时采用了KEEP类代码方案。    </p>
-<h3 id="2-3-插件混淆后的类代码唯一"><a href="#2-3-插件混淆后的类代码唯一" class="headerlink" title="2.3 插件混淆后的类代码唯一"></a>2.3 插件混淆后的类代码唯一</h3><p>保持插件混淆后的类代码唯一性，这个其实progurad[3]已经提供了支持，采用-defaultpackage 或-flattenpackagehierarchy都可以解决代码混淆后冲突问题。我们采用了-flattenpackagehierarchy方式，为每个插件混淆类加入包名前缀。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-defaultpackage renamepakcage 将混淆的类的包名替换</span><br><span class="line">-flattenpackagehierarchye prepackage 将混淆的类包名加上前缀包名</span><br></pre></td></tr></table></figure>
-<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>[1] atlas:<a href="https://github.com/alibaba/atlas" target="_blank" rel="noopener">https://github.com/alibaba/atlas</a><br>[2] dexdeps:<a href="https://android.googlesource.com/platform/dalvik.git/+/master/tools/dexdeps/README.txt" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/master/tools/dexdeps/README.txt</a><br>[3] proguard:<a href="https://www.guardsquare.com/en/products/proguard/manual/usage" target="_blank" rel="noopener">https://www.guardsquare.com/en/products/proguard/manual/usage</a>  </p>
+<p>部分术语</p>
+<blockquote>
+<p>埋点协议：规范一条埋点数据格式，以及数据对象中各字段含义以及取值来源；协议要尽量涵盖Android和iOS设备纬度信息、用户信息、以及业务自身数据；<br>埋点事件：标识一个原子操作，比如一次控件点击、一次网络请求；<br>业务埋点事件：BI或业务关心的数据，比如用户注册、控件点击，页面路径；<br>技术埋点事件：大部分是开发人员关注的数据，可用于各性能指标的统计，比如网络事件、CDN健康状态事件；  </p>
+</blockquote>
+<h1 id="埋点管理平台"><a href="#埋点管理平台" class="headerlink" title="埋点管理平台"></a>埋点管理平台</h1><p>埋点管理平台承载以下基础功能：<br>1、规范和约束事件定义；<br>2、业务埋点持续集成，BI编辑埋点、开发查看变更埋点和测试人工/自动化测试埋点；<br>3、业务埋点测试辅助，如埋点回归验证；<br>4、基于规范化埋点管理，输出数据相关服务，如 kibana自动化查询业务数据需求；  </p>
+<p>本文我们只关注，如果让数据开发与验收成为我们持续集成流程中的不可或缺的一环。</p>
+<h2 id="埋点流程"><a href="#埋点流程" class="headerlink" title="埋点流程"></a>埋点流程</h2><p>在APP版本研发前，产品同学会提出需求，以及他们所关心的数据。BI同学会与产品同学沟通，输出必要的业务埋点事件，同时录入埋点管理平台，如下图<br>//插图<br>埋点管理平台，提供埋点查询与过滤功能。例如，我们提供APP版本、开发同学归属的埋点、埋点所处页面，区块等过滤条件；我们用颜色区分埋点事件的状态，如红色标识为变更埋点，黄色标识为新增埋点等；通过各纬度，尽量让开发和测试学生能快速找到当前要发布的版本，需要研发的业务埋点；<br>//插图<br>开发同学收到埋点通知后，进行埋点开发，自测通过后在埋点管理平台进行开发状态确认；测试同学收到埋点开发完成通知，进行埋点测试与校验。<br>//插图</p>
+<p>通过埋点录入、埋点开发和校验，能极大减少漏埋和错埋的案例发生。</p>
+<h1 id="手持端数据校验"><a href="#手持端数据校验" class="headerlink" title="手持端数据校验"></a>手持端数据校验</h1><p>通过埋点管理平台，也不能说完全杜绝了漏埋和错埋，比如特殊场景下，es数据消费阻塞了，开发和测试同学无法在浏览器端进行校验，这时就要在手持端进行校验工作了。</p>
+<p>手持端可视化埋点工具,要做到不能阻塞APP操作，以及要实时显示埋点数据以及数据汇总查询。借助<a href="https://github.com/hyperion-project" target="_blank" rel="noopener">hyperion</a>以及埋点SDK提供的功能，我们实现了最初的想法。部分截图如下：<br>//插图</p>
+<h1 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h1><p>埋点这块，有很多可以和大家讨论的点，比如埋点SDK上报流程设计、前端与后台数据存储、实时和离线数据分析与利用。本文只是一个起点，后续会陆续分享出来，我们现在的一些玩法，不一定是最优的，但是都是我们的一些实践。</p>
 
       
     </div>
@@ -502,7 +493,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/插件化/" rel="tag"># 插件化</a>
+            <a href="/tags/埋点系统/" rel="tag"># 埋点系统</a>
           
         </div>
       
@@ -515,15 +506,15 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
+              <a href="/2019/08/03/埋点系统之可信数据采集持续集成实践/" rel="next" title="保证手动埋点数据准备性的一些实践">
+                <i class="fa fa-chevron-left"></i> 保证手动埋点数据准备性的一些实践
+              </a>
+            
           </div>
 
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2019/06/29/插件化之启动优化实践/" rel="prev" title="插件化之启动优化实践">
-                插件化之启动优化实践 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -670,7 +661,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1、引言"><span class="nav-number">1.</span> <span class="nav-text">1、引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、插件混淆"><span class="nav-number">2.</span> <span class="nav-text">2、插件混淆</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-保持插件之间相关API类代码不被混淆"><span class="nav-number">2.0.1.</span> <span class="nav-text">2.1 保持插件之间相关API类代码不被混淆</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-保持三方库或基础SDK引用类代码不被混淆"><span class="nav-number">2.0.2.</span> <span class="nav-text">2.2 保持三方库或基础SDK引用类代码不被混淆</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-插件混淆后的类代码唯一"><span class="nav-number">2.0.3.</span> <span class="nav-text">2.3 插件混淆后的类代码唯一</span></a></li></ol></li></ol><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#埋点管理平台"><span class="nav-number">2.</span> <span class="nav-text">埋点管理平台</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#埋点流程"><span class="nav-number">2.1.</span> <span class="nav-text">埋点流程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#手持端数据校验"><span class="nav-number">3.</span> <span class="nav-text">手持端数据校验</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结束语"><span class="nav-number">4.</span> <span class="nav-text">结束语</span></a></li></ol></div>
             
 
           </div>
