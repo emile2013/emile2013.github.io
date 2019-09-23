@@ -86,6 +86,7 @@ ClassLoaderCreator #4:
     at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
     at java.lang.Thread.run(Thread.java:919)
 ```
+这种方式我们能拿到Java层与其对接的native层thread总数，但是拿不到没有attach到java层的native thread，比如Futter engine中的native thread等。  
 如果为线程分配一个可定位到代码的名称，那我们完全能对症下药。但实际很难，我们没法约束开发同学和三方SDK为每个线程起自定义名称，例如上面的pool-16-thread-1的线程，我们很难定位到是哪个类发起的调用。  
 另外我们也可以直接dump进程内存，来查看内存情况，使用方式如下所示：
 ```
