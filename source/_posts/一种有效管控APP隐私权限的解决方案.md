@@ -408,7 +408,7 @@ ADDED from /../app/src/main/AndroidManifest.xml:11:5-68
 ```
 
 # 结束语
-关于隐私权限列表，相关部门也未给允一个完整的列表，建议团队把所有未在隐私文档中未描述的动态权限都作为禁用权限，直至隐私文档同步。
+关于隐私权限列表，相关部门也未给允一个完整的列表，建议团队把所有未在隐私文档中描述的动态权限都作为禁用权限，直至隐私文档同步。
 
 # 参考
 1.Android Gradle Plugin：[https://android.googlesource.com/platform/tools/base/+/studio-master-dev/build-system/gradle-core](https://android.googlesource.com/platform/tools/base/+/studio-master-dev/build-system/gradle-core)  
