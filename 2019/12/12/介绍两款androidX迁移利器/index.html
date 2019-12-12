@@ -96,22 +96,18 @@
 
 
 
-  <meta name="description" content="1、引言插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。">
-<meta name="keywords" content="插件化">
+  <meta name="description" content="背景support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。考虑androidx相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出迁移">
+<meta name="keywords" content="小功能组">
 <meta property="og:type" content="article">
-<meta property="og:title" content="插件化之启动优化实践">
-<meta property="og:url" content="http://yoursite.com/2019/06/29/插件化之启动优化实践/index.html">
+<meta property="og:title" content="介绍两款androidX迁移利器">
+<meta property="og:url" content="http://yoursite.com/2019/12/12/介绍两款androidX迁移利器/index.html">
 <meta property="og:site_name" content="y.huang&#39;s Blog">
-<meta property="og:description" content="1、引言插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。">
+<meta property="og:description" content="背景support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。考虑androidx相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出迁移">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart.png">
-<meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart2.png">
-<meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/29f3ac36.png">
-<meta property="og:updated_time" content="2019-11-17T04:30:19.174Z">
+<meta property="og:updated_time" content="2019-12-12T12:14:32.992Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="插件化之启动优化实践">
-<meta name="twitter:description" content="1、引言插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；    微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart.png">
+<meta name="twitter:title" content="介绍两款androidX迁移利器">
+<meta name="twitter:description" content="背景support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。考虑androidx相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出迁移">
 
 
 
@@ -119,7 +115,7 @@
 
   
   
-  <link rel="canonical" href="http://yoursite.com/2019/06/29/插件化之启动优化实践/">
+  <link rel="canonical" href="http://yoursite.com/2019/12/12/介绍两款androidX迁移利器/">
 
 
 
@@ -129,7 +125,7 @@
   };
 </script>
 
-  <title>插件化之启动优化实践 | y.huang's Blog</title>
+  <title>介绍两款androidX迁移利器 | y.huang's Blog</title>
   
 
 
@@ -349,7 +345,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/06/29/插件化之启动优化实践/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/12/介绍两款androidX迁移利器/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="y.huang">
@@ -366,7 +362,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">插件化之启动优化实践
+          <h1 class="post-title" itemprop="name headline">介绍两款androidX迁移利器
 
               
             
@@ -392,24 +388,12 @@
                 
               
 
-              <time title="Created: 2019-06-29 22:40:33" itemprop="dateCreated datePublished" datetime="2019-06-29T22:40:33+08:00">2019-06-29</time>
+              <time title="Created: 2019-12-12 19:23:57 / Modified: 20:14:32" itemprop="dateCreated datePublished" datetime="2019-12-12T19:23:57+08:00">2019-12-12</time>
             
 
             
               
 
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2019-11-17 12:30:19" itemprop="dateModified" datetime="2019-11-17T12:30:19+08:00">2019-11-17</time>
               
             
           </span>
@@ -468,37 +452,32 @@
       
 
       
-        <h1 id="1、引言"><a href="#1、引言" class="headerlink" title="1、引言"></a>1、引言</h1><p>插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：</p>
-<ol>
-<li>ART Runtime上首次启动，dex2aot耗时问题； </li>
-<li>内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；  </li>
-</ol>
-<p>微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。针对启动时长，我们尝试做了以下优化。<br><a id="more"></a></p>
-<h1 id="2、启动优化"><a href="#2、启动优化" class="headerlink" title="2、启动优化"></a>2、启动优化</h1><p>优化前，微店APP启动流程可简化成下图所示。APP在Applicaction的attachBaseContext,onCreate以及SplashActivity的onStart，onWindowFocusChanged函数中实现了插件的加载和SDK的初始化。  </p>
-<ol>
-<li>application attachBaseContext阶段：Muitidex处理后，在异步线程，插件框架收集所有静态插件信息（插件文件，插件组件解析）并进行loadDex等操作； </li>
-<li>application onCreate阶段：执行必要的插件以及核心SDK初始化代码,以保证后续功能调用成功，这里的核心SDK包括诸如网络，Crash上报库，埋点库等；  </li>
-<li>activity onStart阶段:这里再细化为主线程和异步线程，执行部分SDK的初始化,比如Fresco；</li>
-<li>activity onWindowFocusChanged阶段:这一阶段执行不太紧急的SDK初始化，比如IM长连接，第三方统计库等。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart.png" alt> </li>
-</ol>
-<p>在这一阶段，已经做到了SDK分层加载，但还是不太理想，主要表现在：</p>
-<ol>
-<li>application attachBaseContext阶段，所有插件都主动加载，并未按需加载或懒加载，比如App里的足迹插件，其实可以做为懒加载插件，在启动足迹页时，进行插件加载； </li>
-<li>application onCreate阶段，大量的SDK初始化，直接加长了启动时长，直接表现为用户看到的splash图其实是window背景，splash页一直在loading中；</li>
-<li>在Splash Activity周期函数中执行了SDK初始化代码，这里在绝大数场景下是没问题。但在自动化测试过程，可能不会先跳splash页，会引起由于SDK没初始化，导致异常表现。</li>
-</ol>
-<p>在收到华为市场启动时长过长警告后（华为要求电商APP启动时长不能超2s），决定优化启动流程。</p>
-<h1 id="3、优化设计"><a href="#3、优化设计" class="headerlink" title="3、优化设计"></a>3、优化设计</h1><p>针对上章节问题，对流程重构，设计了以下流程。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart2.png" alt><br>插件分为懒加载插件和非懒加载插件，启动时仅对非懒加载插件进行加载，懒加载插件仅做校验等工作。<br>在Application onCreate阶段，不再在主线程执行SDK初始化，在工作线程执行完核心SDK始化后，启动了多个其他工作线程对其余SDK进行操作；<br>在首个Activity onResume中对必须在主线程执行的SDK进行操作；</p>
-<h1 id="4、优化实现"><a href="#4、优化实现" class="headerlink" title="4、优化实现"></a>4、优化实现</h1><p>代码实现其实做了很多工作，非常优秀的团队小伙伴实现了包括ART上首次启动禁用dex2aot优化[1],应用秒开优化[2]。一些核心实现简述如下：</p>
-<ol>
-<li>ART首次启动优化，主要思路hook runtime-&gt;image_dex2oat_enabled_实现动态禁用dex2aot，由于Android版本多，rom包碎片化，这里涉及到大量的适配工作，主要在于runtime的偏移量矫正； </li>
-<li>在启动后，会在工作进程对所有插件进行dex2aot操作[3]；</li>
-<li>APP hook instrumentation, 在第一个Activity实例化时，如果SDK init工作还未完成，先启动一个HookedActivity，等所有工作完成后，再启动业务Splash页。</li>
-</ol>
-<p>如果是拦截启动了hookedActivity，一定要在hookedInstrumentation.callActivityOnCreate方法重置theme为hookActivity自身主题，否则可能会抛出异常，原因我们可以看<a href="http://androidxref.com/9.0.0_r3/xref/frameworks/base/core/java/android/app/ActivityThread.java#2808" target="_blank" rel="noopener">ActiviyThread.performLaunchActivity</a>的实现：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Activity <span class="title">performLaunchActivity</span><span class="params">(ActivityClientRecord r, Intent customIntent)</span> </span>&#123;</span><br><span class="line">.....</span><br><span class="line">      <span class="comment">//r是ActivityRecord,r.activityInfo是从目标activity组件信息里读取的</span></span><br><span class="line">      <span class="keyword">int</span> theme = r.activityInfo.getThemeResource();</span><br><span class="line">      <span class="keyword">if</span> (theme != <span class="number">0</span>) &#123;</span><br><span class="line">                    activity.setTheme(theme);</span><br><span class="line">       &#125;</span><br><span class="line">      activity.mCalled = <span class="keyword">false</span>;</span><br><span class="line">      <span class="keyword">if</span> (r.isPersistable()) &#123;</span><br><span class="line">        mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">       mInstrumentation.callActivityOnCreate(activity, r.state);</span><br><span class="line">       &#125;</span><br><span class="line">                </span><br><span class="line">.....                </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>经过一系列的优化后，我们拿到了比较理想的数据。从1w的采样数据我们发现，绝大多数启动在2s以内，有一定的量分布在10s以上。10s以上认定为不太正常的统计数据，通过onWindowFocusChanged方式无法适配Push唤醒,黑屏等场景。下一步的想法是只统计launcher程序启动APP时长，忽略其他唤醒方式，异常数据可能会大量减少。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/29f3ac36.png" alt> </p>
-<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>[1] art dex2oat 加载加速浅析:<a href="https://fucknmb.com/2018/12/30/art-dex2oat%E5%8A%A0%E8%BD%BD%E5%8A%A0%E9%80%9F%E6%B5%85%E6%9E%90/" target="_blank" rel="noopener">https://fucknmb.com/2018/12/30/art-dex2oat%E5%8A%A0%E8%BD%BD%E5%8A%A0%E9%80%9F%E6%B5%85%E6%9E%90/</a><br>[2] Android端应用秒开优化体验:<a href="http://zhengxiaoyong.com/2016/07/18/Android%E7%AB%AF%E5%BA%94%E7%94%A8%E7%A7%92%E5%BC%80%E4%BC%98%E5%8C%96%E4%BD%93%E9%AA%8C/" target="_blank" rel="noopener">http://zhengxiaoyong.com/2016/07/18/Android%E7%AB%AF%E5%BA%94%E7%94%A8%E7%A7%92%E5%BC%80%E4%BC%98%E5%8C%96%E4%BD%93%E9%AA%8C/</a><br>[3] atlas:<a href="https://github.com/alibaba/atlas" target="_blank" rel="noopener">https://github.com/alibaba/atlas</a>  </p>
+        <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。<br>考虑androidx相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出迁移效率和迁移质量的解决方案较少，本文给出微店迁移过程开发的两款功能插件。<br><a id="more"></a></p>
+<h1 id="迁移效率插件"><a href="#迁移效率插件" class="headerlink" title="迁移效率插件"></a>迁移效率插件</h1><p>Android官方提供的迁移方案，操作不复杂，在讲操作前，我们先关注以下官网的辅助文档：</p>
+<p>1.Migrating to AndroidX Overview: <a href="https://developer.android.com/jetpack/androidx/migrate" target="_blank" rel="noopener">https://developer.android.com/jetpack/androidx/migrate</a><br>2.Migrating to AndroidX artifact-mappings：<a href="https://developer.android.com/jetpack/androidx/migrate/artifact-mappings" target="_blank" rel="noopener">https://developer.android.com/jetpack/androidx/migrate/artifact-mappings</a><br>3.Migrating to AndroidX class-mappings：<a href="https://developer.android.com/jetpack/androidx/migrate/class-mappings" target="_blank" rel="noopener">https://developer.android.com/jetpack/androidx/migrate/class-mappings</a>   </p>
+<p>上以三个文档很重要，是迁移过程我们人工修正问题的重要依据。本文简单介绍下官方建议的旧项目源码如何迁移。</p>
+<ul>
+<li><p>升级编译依赖</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1.修改项目build.gradle中android gradle插件至3.2.0+，例如3.5.2；</span><br><span class="line">2.并且将gradle-wrapper.properties 中的gradle版本改为4.6+，例如5.6.2；</span><br><span class="line">3.升级app compileSdkVersion到 28+，例如29；</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改项目<code>gradle.properties</code>，用以支持androidx</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># When configured, Gradle will run in incubating parallel mode.</span><br><span class="line"># This option should only be used with decoupled projects. More details, visit</span><br><span class="line"># http://www.gradle.org/docs/current/userguide/multi_project_builds.html#sec:decoupled_projects</span><br><span class="line"># org.gradle.parallel=true</span><br><span class="line"># AndroidX package structure to make it clearer which packages are bundled with the</span><br><span class="line"># Android operating system, and which are packaged with your app&apos;s APK</span><br><span class="line"># https://developer.android.com/topic/libraries/support-library/androidx-rn</span><br><span class="line">android.useAndroidX=true</span><br><span class="line"># Automatically convert third-party libraries to use AndroidX</span><br><span class="line">android.enableJetifier=true</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>用Android Studio <code>Migrate to Androidx</code> 功能自动修改代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">操作路径：工具栏-&gt;Refactor-&gt;Migrate to Androidx...</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>经过以上两个步骤后，如果项目能编译成功并且layout布局中所有类都能找到，那恭喜你，本文下面的内容你无需查看了。我们APP尝试迁移出现了以下androidx带来的问题：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. support替换androidx相对应类错误，这种错误会同时在java文件和布局文件中，例如android.support.v4.view.ViewPager没有正确替换成androidx.viewpager.widget.ViewPager，而是修改成了不存在的类androidx.core.view.ViewPager，导致迁移失败；  </span><br><span class="line">2. java文件中相关support类import审明并未完全删除，导致迁移失败；  </span><br><span class="line">3. 如果项目二次开发了相关support类或用到了只限制在support lib用的类，那么这一部分类会转换成androdx相关类失败，导致迁移失败；  </span><br><span class="line">4. 可能的资源引用，在混淆时会报错，但这类问题不是致命问题，可以进行dontwarn处理；</span><br></pre></td></tr></table></figure></p>
+<p>官方迁移方案显然不符合我们团队以下需求：  </p>
+<ul>
+<li>APP项目是通过repo管理，子项目众多，逐个迁移效率太低；  </li>
+<li>Android Studio <code>Migrate to Androidx</code>   功能较弱；  </li>
+</ul>
+<p>多方考虑，查阅<code>Migrate to Androidx</code> 功能源码后，决定自行研发迁移插件<a href="https://github.com/emile2013/EasyMigrateAndroidX" target="_blank" rel="noopener">EasyMigrateAndroidX</a>,其使用简单执行 <code>./gradlew migrateAndroidX</code>就能较准确替换内容：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EasyMigrateAndroidX原理是解析migrate.xml文件(来自AS源码)，遍历所有项目(setting.gradle中include的所有项目中的类文件、资源文件以及gradle文件，并进行内容替换，能加快像repo管理或多项目迁移速度；</span><br></pre></td></tr></table></figure></p>
+<h1 id="迁移质量插件"><a href="#迁移质量插件" class="headerlink" title="迁移质量插件"></a>迁移质量插件</h1><p>项目源码自动修改后，还是担心会带来线上问题，JAVA源码错误较为直观，编译过程就能给出提示，但像layout文件里如有错误类，不易察觉。考虑以上场景，研发了检测布局文件中不存在的类功能插件<a href="https://github.com/emile2013/ResMonitor" target="_blank" rel="noopener">ResMonitor</a>，执行<code>./gradlew checkReleaseRes</code>即可输出错误文件，输出内容如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Execution failed for task &apos;:app:checkReleaseRes&apos;.</span><br><span class="line">&gt; java.lang.Exception: androidx.core.view.ViewPager not exist !! but declare at:</span><br><span class="line">  # Referenced at /ResMonitor/sample/app/src/main/res/layout/content_main.xml:11</span><br></pre></td></tr></table></figure></p>
+<p>其实现原理：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">原理是拿到layout和manifest xml导出的混淆文件,再通过javassist检测类是否存在</span><br></pre></td></tr></table></figure></p>
+<p>当然<a href="https://github.com/emile2013/ResMonitor" target="_blank" rel="noopener">ResMonitor</a>不仅限于androidX迁移检测，后续可辅助上线前质量测试。</p>
+<h1 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h1><p>androidX迁移，AGP是如何通过enableJetifier参数实现编译期类替换的，这块有时间再另起一博文再议。另外，小伙伴们，快去踩坑吧。</p>
 
       
     </div>
@@ -522,7 +501,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/插件化/" rel="tag"># 插件化</a>
+            <a href="/tags/小功能组/" rel="tag"># 小功能组</a>
           
         </div>
       
@@ -535,8 +514,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2019/05/23/插件化之插件混淆的可行性探索/" rel="next" title="插件化之插件混淆的可行性探索">
-                <i class="fa fa-chevron-left"></i> 插件化之插件混淆的可行性探索
+              <a href="/2019/11/16/一种有效管控APP隐私权限的解决方案/" rel="next" title="一种有效管控APP隐私权限的解决方案">
+                <i class="fa fa-chevron-left"></i> 一种有效管控APP隐私权限的解决方案
               </a>
             
           </div>
@@ -544,10 +523,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2019/07/19/插件化之AAPT客户化/" rel="prev" title="插件化之AAPT客户化">
-                插件化之AAPT客户化 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -698,7 +673,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1、引言"><span class="nav-number">1.</span> <span class="nav-text">1、引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、启动优化"><span class="nav-number">2.</span> <span class="nav-text">2、启动优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、优化设计"><span class="nav-number">3.</span> <span class="nav-text">3、优化设计</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4、优化实现"><span class="nav-number">4.</span> <span class="nav-text">4、优化实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#迁移效率插件"><span class="nav-number">2.</span> <span class="nav-text">迁移效率插件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#迁移质量插件"><span class="nav-number">3.</span> <span class="nav-text">迁移质量插件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结束语"><span class="nav-number">4.</span> <span class="nav-text">结束语</span></a></li></ol></div>
             
 
           </div>
