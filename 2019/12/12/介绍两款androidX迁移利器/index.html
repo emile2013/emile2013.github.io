@@ -96,18 +96,18 @@
 
 
 
-  <meta name="description" content="背景support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。考虑androidx相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出迁移">
+  <meta name="description" content="背景support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。考虑androidX相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出解决">
 <meta name="keywords" content="小功能组">
 <meta property="og:type" content="article">
 <meta property="og:title" content="介绍两款androidX迁移利器">
 <meta property="og:url" content="http://yoursite.com/2019/12/12/介绍两款androidX迁移利器/index.html">
 <meta property="og:site_name" content="y.huang&#39;s Blog">
-<meta property="og:description" content="背景support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。考虑androidx相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出迁移">
+<meta property="og:description" content="背景support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。考虑androidX相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出解决">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-12-12T12:14:32.992Z">
+<meta property="og:updated_time" content="2019-12-14T01:23:11.942Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="介绍两款androidX迁移利器">
-<meta name="twitter:description" content="背景support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。考虑androidx相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出迁移">
+<meta name="twitter:description" content="背景support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。考虑androidX相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出解决">
 
 
 
@@ -388,12 +388,24 @@
                 
               
 
-              <time title="Created: 2019-12-12 19:23:57 / Modified: 20:14:32" itemprop="dateCreated datePublished" datetime="2019-12-12T19:23:57+08:00">2019-12-12</time>
+              <time title="Created: 2019-12-12 19:23:57" itemprop="dateCreated datePublished" datetime="2019-12-12T19:23:57+08:00">2019-12-12</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-12-14 09:23:11" itemprop="dateModified" datetime="2019-12-14T09:23:11+08:00">2019-12-14</time>
               
             
           </span>
@@ -452,7 +464,7 @@
       
 
       
-        <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。<br>考虑androidx相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出迁移效率和迁移质量的解决方案较少，本文给出微店迁移过程开发的两款功能插件。<br><a id="more"></a></p>
+        <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。<br>考虑androidX相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出解决迁移效率和迁移质量的方案较少，本文给出微店迁移过程开发的两款功能插件。<br><a id="more"></a></p>
 <h1 id="迁移效率插件"><a href="#迁移效率插件" class="headerlink" title="迁移效率插件"></a>迁移效率插件</h1><p>Android官方提供的迁移方案，操作不复杂，在讲操作前，我们先关注以下官网的辅助文档：</p>
 <p>1.Migrating to AndroidX Overview: <a href="https://developer.android.com/jetpack/androidx/migrate" target="_blank" rel="noopener">https://developer.android.com/jetpack/androidx/migrate</a><br>2.Migrating to AndroidX artifact-mappings：<a href="https://developer.android.com/jetpack/androidx/migrate/artifact-mappings" target="_blank" rel="noopener">https://developer.android.com/jetpack/androidx/migrate/artifact-mappings</a><br>3.Migrating to AndroidX class-mappings：<a href="https://developer.android.com/jetpack/androidx/migrate/class-mappings" target="_blank" rel="noopener">https://developer.android.com/jetpack/androidx/migrate/class-mappings</a>   </p>
 <p>上以三个文档很重要，是迁移过程我们人工修正问题的重要依据。本文简单介绍下官方建议的旧项目源码如何迁移。</p>
@@ -467,17 +479,17 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">操作路径：工具栏-&gt;Refactor-&gt;Migrate to Androidx...</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
-<p>经过以上两个步骤后，如果项目能编译成功并且layout布局中所有类都能找到，那恭喜你，本文下面的内容你无需查看了。我们APP尝试迁移出现了以下androidx带来的问题：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. support替换androidx相对应类错误，这种错误会同时在java文件和布局文件中，例如android.support.v4.view.ViewPager没有正确替换成androidx.viewpager.widget.ViewPager，而是修改成了不存在的类androidx.core.view.ViewPager，导致迁移失败；  </span><br><span class="line">2. java文件中相关support类import审明并未完全删除，导致迁移失败；  </span><br><span class="line">3. 如果项目二次开发了相关support类或用到了只限制在support lib用的类，那么这一部分类会转换成androdx相关类失败，导致迁移失败；  </span><br><span class="line">4. 可能的资源引用，在混淆时会报错，但这类问题不是致命问题，可以进行dontwarn处理；</span><br></pre></td></tr></table></figure></p>
+<p>经过以上步骤后，如果项目能编译成功并且layout布局中所有类都能找到，那恭喜你，本文下面的内容你无需查看了。我们APP尝试迁移出现了以下androidX带来的问题：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. support替换androidx相对应类错误，这种错误会同时在java文件和布局文件中，例如android.support.v4.view.ViewPager没有正确替换成androidx.viewpager.widget.ViewPager，而是修改成了不存在的类androidx.core.view.ViewPager，导致迁移失败；  </span><br><span class="line">2. java文件中相关support类import审明并未完全删除，导致迁移失败；  </span><br><span class="line">3. 如果项目二次开发了相关support类或用到了只限制在support lib用的类，那么这一部分类会转换成androdx相关类失败，导致迁移失败；  </span><br><span class="line">4. 可能的资源引用，在混淆时会报错，但这类问题不是致命问题，可以进行dontwarn处理；</span><br></pre></td></tr></table></figure></p>
 <p>官方迁移方案显然不符合我们团队以下需求：  </p>
 <ul>
 <li>APP项目是通过repo管理，子项目众多，逐个迁移效率太低；  </li>
 <li>Android Studio <code>Migrate to Androidx</code>   功能较弱；  </li>
 </ul>
-<p>多方考虑，查阅<code>Migrate to Androidx</code> 功能源码后，决定自行研发迁移插件<a href="https://github.com/emile2013/EasyMigrateAndroidX" target="_blank" rel="noopener">EasyMigrateAndroidX</a>,其使用简单执行 <code>./gradlew migrateAndroidX</code>就能较准确替换内容：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EasyMigrateAndroidX原理是解析migrate.xml文件(来自AS源码)，遍历所有项目(setting.gradle中include的所有项目中的类文件、资源文件以及gradle文件，并进行内容替换，能加快像repo管理或多项目迁移速度；</span><br></pre></td></tr></table></figure></p>
+<p>多方考虑，查阅<code>Migrate to Androidx</code> 功能源码后，决定自行研发迁移插件<a href="https://github.com/emile2013/EasyMigrateAndroidX" target="_blank" rel="noopener">EasyMigrateAndroidX</a>,其使用简单执行 <code>./gradlew migrateAndroidX</code>就能准确替换内容：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EasyMigrateAndroidX原理是解析migrate.xml文件(来自AS源码)，遍历所有项目(setting.gradle中include的所有项目中的类文件、资源文件以及gradle文件，并进行内容替换，能加快像repo管理或多项目迁移速度；</span><br></pre></td></tr></table></figure></p>
 <h1 id="迁移质量插件"><a href="#迁移质量插件" class="headerlink" title="迁移质量插件"></a>迁移质量插件</h1><p>项目源码自动修改后，还是担心会带来线上问题，JAVA源码错误较为直观，编译过程就能给出提示，但像layout文件里如有错误类，不易察觉。考虑以上场景，研发了检测布局文件中不存在的类功能插件<a href="https://github.com/emile2013/ResMonitor" target="_blank" rel="noopener">ResMonitor</a>，执行<code>./gradlew checkReleaseRes</code>即可输出错误文件，输出内容如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Execution failed for task &apos;:app:checkReleaseRes&apos;.</span><br><span class="line">&gt; java.lang.Exception: androidx.core.view.ViewPager not exist !! but declare at:</span><br><span class="line">  # Referenced at /ResMonitor/sample/app/src/main/res/layout/content_main.xml:11</span><br></pre></td></tr></table></figure></p>
 <p>其实现原理：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">原理是拿到layout和manifest xml导出的混淆文件,再通过javassist检测类是否存在</span><br></pre></td></tr></table></figure></p>
 <p>当然<a href="https://github.com/emile2013/ResMonitor" target="_blank" rel="noopener">ResMonitor</a>不仅限于androidX迁移检测，后续可辅助上线前质量测试。</p>
-<h1 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h1><p>androidX迁移，AGP是如何通过enableJetifier参数实现编译期类替换的，这块有时间再另起一博文再议。另外，小伙伴们，快去踩坑吧。</p>
+<h1 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h1><p>androidX迁移，AGP是如何通过enableJetifier参数实现编译期类替换的，这块有时间再另起一博文细说。另外，小伙伴们，快去踩坑吧。</p>
 
       
     </div>
