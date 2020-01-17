@@ -945,7 +945,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-11-17 12:30:19" itemprop="dateModified" datetime="2019-11-17T12:30:19+08:00">2019-11-17</time>
+                <time title="Modified: 2020-01-17 16:40:54" itemprop="dateModified" datetime="2020-01-17T16:40:54+08:00">2020-01-17</time>
               
             
           </span>
@@ -998,9 +998,10 @@
 
       
         
-          <h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>我相信很多团队都面对过令人头痛的pthread_create stack内存溢出问题。在Android中,一个典型的pthread_create stack内存溢出堆栈信息如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">java.lang.OutOfMemoryError</span><br><span class="line">pthread_create (1040KB stack) failed: Try again</span><br><span class="line">1 java.lang.Thread.nativeCreate(Native Method)</span><br><span class="line">2 java.lang.Thread.start(Thread.java:733)</span><br><span class="line">3 java.util.concurrent.ThreadPoolExecutor.addWorker(ThreadPoolExecutor.java:975)</span><br><span class="line">4 java.util.concurrent.ThreadPoolExecutor.processWorkerExit(ThreadPoolExecutor.java:1043)</span><br><span class="line">5 java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1185)</span><br><span class="line">6 java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)</span><br><span class="line">7 java.lang.Thread.run(Thread.java:764)</span><br></pre></td></tr></table></figure>
-<p>出现栈内存溢出无非两个原因：<br>1、线程数达到了系统最大限制数；<br>2、进程的栈内存超过了虚拟机的最大内存数。<br>关于线程数达到了系统最大限制数，在国内手机厂商中，华为手机在7.0+手机上已将最大线程数修改成了300。我们APP有大量的华为用户，不得不面对华为系统限制问题。<br>Android Dalvik和ART，将stack分为了java stack和native stack，本文没去具体实验，从<a href="https://blog.csdn.net/kongxinsun/article/details/78679860" target="_blank" rel="noopener">kongxinsun</a>的博客，我们了解到两者总量是1056KB。栈内存回收和堆内存策略不一样，比较简单，当线程结束，线程占用的栈内存也就回收了。<br>
+          <h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>我相信很多团队都面对过令人头痛的pthread_create 创建线程内存溢出问题。在Android中,典型的pthread_create内存溢出堆栈信息如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">//此异常多为栈内存分配失败</span><br><span class="line">java.lang.OutOfMemoryError</span><br><span class="line">pthread_create (1040KB stack) failed: Try again</span><br><span class="line">1 java.lang.Thread.nativeCreate(Native Method)</span><br><span class="line">2 java.lang.Thread.start(Thread.java:733)</span><br><span class="line">3 java.util.concurrent.ThreadPoolExecutor.addWorker(ThreadPoolExecutor.java:975)</span><br><span class="line">4 java.util.concurrent.ThreadPoolExecutor.processWorkerExit(ThreadPoolExecutor.java:1043)</span><br><span class="line">5 java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1185)</span><br><span class="line">6 java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)</span><br><span class="line">7 java.lang.Thread.run(Thread.java:764)</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">//此异常多为线程数到达上限</span><br><span class="line">java.lang.OutOfMemoryError</span><br><span class="line">pthread_create (1040KB stack) failed: Out of memory</span><br><span class="line">1 java.lang.Thread.nativeCreate(Native Method)</span><br><span class="line">2 java.lang.Thread.start(Thread.java:743)</span><br><span class="line">3 java.util.concurrent.ThreadPoolExecutor.addWorker(ThreadPoolExecutor.java:941)</span><br><span class="line">4 java.util.concurrent.ThreadPoolExecutor.processWorkerExit(ThreadPoolExecutor.java:1009)</span><br><span class="line">5 java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1151)</span><br><span class="line">6 java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:607)</span><br><span class="line">7 java.lang.Thread.run(Thread.java:774)</span><br></pre></td></tr></table></figure>
+<p>出现创建线程内存溢出无非两个原因：<br>1、进程的栈内存超过了虚拟机的最大内存数；<br>2、线程数达到了系统最大限制数；<br>关于线程数达到了系统最大限制数，在国内手机厂商中，华为手机在7.0+手机上已将最大线程数修改成了300。我们APP有大量的华为用户，不得不面对华为系统限制问题。<br>Android Dalvik和ART，将stack分为了java stack和native stack，本文没去具体实验，从<a href="https://blog.csdn.net/kongxinsun/article/details/78679860" target="_blank" rel="noopener">kongxinsun</a>的博客，我们了解到两者总量是1056KB。栈内存回收和堆内存策略不一样，比较简单，当线程结束，线程占用的栈内存也就回收了。<br>
           <!--noindex-->
           
             <div class="post-button text-center">
@@ -1902,7 +1903,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
   <span class="with-love" id="animate">
     <i class="fa fa-user"></i>
   </span>
