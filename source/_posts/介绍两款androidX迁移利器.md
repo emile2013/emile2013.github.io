@@ -8,7 +8,7 @@ tags:
 ---
 # 背景
 support迁移至androidX相关包，绝大部分团队万不得已才处理，因其可见的收益过小，反而带来更大研发和测试成本。  
-考虑androidx相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出迁移效率和迁移质量的解决方案较少，本文给出微店迁移过程开发的两款功能插件。
+考虑androidX相关包已release发布并逐步稳定，众多开源库开始基于androidX进行迭代，Android在Android Studio 3.5上默认将androidX开启，以及后续新API适配等多方因素，微店APP也开始着手迁移工作了。网上博文众多，但实际给出解决迁移效率和迁移质量的方案较少，本文给出微店迁移过程开发的两款功能插件。
 <!-- more -->
 # 迁移效率插件
 
@@ -45,7 +45,7 @@ android.enableJetifier=true
 操作路径：工具栏->Refactor->Migrate to Androidx...
 ```
 
-经过以上两个步骤后，如果项目能编译成功并且layout布局中所有类都能找到，那恭喜你，本文下面的内容你无需查看了。我们APP尝试迁移出现了以下androidx带来的问题：
+经过以上步骤后，如果项目能编译成功并且layout布局中所有类都能找到，那恭喜你，本文下面的内容你无需查看了。我们APP尝试迁移出现了以下androidX带来的问题：
 ```
 1. support替换androidx相对应类错误，这种错误会同时在java文件和布局文件中，例如android.support.v4.view.ViewPager没有正确替换成androidx.viewpager.widget.ViewPager，而是修改成了不存在的类androidx.core.view.ViewPager，导致迁移失败；  
 2. java文件中相关support类import审明并未完全删除，导致迁移失败；  
@@ -57,7 +57,7 @@ android.enableJetifier=true
 - APP项目是通过repo管理，子项目众多，逐个迁移效率太低；  
 - Android Studio `Migrate to Androidx`   功能较弱；  
 
-多方考虑，查阅`Migrate to Androidx` 功能源码后，决定自行研发迁移插件[EasyMigrateAndroidX](https://github.com/emile2013/EasyMigrateAndroidX),其使用简单执行 `./gradlew migrateAndroidX`就能较准确替换内容：
+多方考虑，查阅`Migrate to Androidx` 功能源码后，决定自行研发迁移插件[EasyMigrateAndroidX](https://github.com/emile2013/EasyMigrateAndroidX),其使用简单执行 `./gradlew migrateAndroidX`就能准确替换内容：
 ```
 EasyMigrateAndroidX原理是解析migrate.xml文件(来自AS源码)，遍历所有项目(setting.gradle中include的所有项目中的类文件、资源文件以及gradle文件，并进行内容替换，能加快像repo管理或多项目迁移速度；
 ```
@@ -78,4 +78,4 @@ Execution failed for task ':app:checkReleaseRes'.
 
 # 结束语
 
-androidX迁移，AGP是如何通过enableJetifier参数实现编译期类替换的，这块有时间再另起一博文再议。另外，小伙伴们，快去踩坑吧。
+androidX迁移，AGP是如何通过enableJetifier参数实现编译期类替换的，这块有时间再另起一博文细说。另外，小伙伴们，快去踩坑吧。

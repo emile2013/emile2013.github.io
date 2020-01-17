@@ -7,9 +7,10 @@ tags:
     - 应用性能
 ---
 # 引言
-我相信很多团队都面对过令人头痛的pthread_create stack内存溢出问题。在Android中,一个典型的pthread_create stack内存溢出堆栈信息如下：
+我相信很多团队都面对过令人头痛的pthread_create 创建线程内存溢出问题。在Android中,典型的pthread_create内存溢出堆栈信息如下：
 
 ```
+//此异常多为栈内存分配失败
 java.lang.OutOfMemoryError
 pthread_create (1040KB stack) failed: Try again
 1 java.lang.Thread.nativeCreate(Native Method)
@@ -21,9 +22,23 @@ pthread_create (1040KB stack) failed: Try again
 7 java.lang.Thread.run(Thread.java:764)
 ```
 
-出现栈内存溢出无非两个原因：  
-1、线程数达到了系统最大限制数；  
-2、进程的栈内存超过了虚拟机的最大内存数。  
+```
+//此异常多为线程数到达上限
+java.lang.OutOfMemoryError
+pthread_create (1040KB stack) failed: Out of memory
+1 java.lang.Thread.nativeCreate(Native Method)
+2 java.lang.Thread.start(Thread.java:743)
+3 java.util.concurrent.ThreadPoolExecutor.addWorker(ThreadPoolExecutor.java:941)
+4 java.util.concurrent.ThreadPoolExecutor.processWorkerExit(ThreadPoolExecutor.java:1009)
+5 java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1151)
+6 java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:607)
+7 java.lang.Thread.run(Thread.java:774)
+```
+
+
+出现创建线程内存溢出无非两个原因：  
+1、进程的栈内存超过了虚拟机的最大内存数；  
+2、线程数达到了系统最大限制数；  
 关于线程数达到了系统最大限制数，在国内手机厂商中，华为手机在7.0+手机上已将最大线程数修改成了300。我们APP有大量的华为用户，不得不面对华为系统限制问题。  
 Android Dalvik和ART，将stack分为了java stack和native stack，本文没去具体实验，从[kongxinsun](https://blog.csdn.net/kongxinsun/article/details/78679860)的博客，我们了解到两者总量是1056KB。栈内存回收和堆内存策略不一样，比较简单，当线程结束，线程占用的栈内存也就回收了。  
 <!-- more -->
