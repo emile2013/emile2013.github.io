@@ -104,7 +104,7 @@
 <meta property="og:description" content="引言最近工作之外，时间稍有富余，便尝试在macOS环境下编译futter engine工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki Setting-up-the-Engine-development-environment下，碰到的问题，以及给出解决方案，不对依赖">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/clion_engine.png?raw=true">
-<meta property="og:updated_time" content="2020-03-27T04:03:49.166Z">
+<meta property="og:updated_time" content="2020-03-27T04:28:35.150Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MacOS环境下Flutter Engine编译纪要">
 <meta name="twitter:description" content="引言最近工作之外，时间稍有富余，便尝试在macOS环境下编译futter engine工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki Setting-up-the-Engine-development-environment下，碰到的问题，以及给出解决方案，不对依赖">
@@ -389,7 +389,7 @@
                 
               
 
-              <time title="Created: 2020-03-27 09:29:48 / Modified: 12:03:49" itemprop="dateCreated datePublished" datetime="2020-03-27T09:29:48+08:00">2020-03-27</time>
+              <time title="Created: 2020-03-27 09:29:48 / Modified: 12:28:35" itemprop="dateCreated datePublished" datetime="2020-03-27T09:29:48+08:00">2020-03-27</time>
             
 
             
@@ -468,9 +468,9 @@
 <p>导入CLion</p>
 </blockquote>
 <p>clion打开上一步软链compile_commands.json文件，导入时间可能较长，耐心等待即可。<br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/clion_engine.png?raw=true" alt> </p>
-<h3 id="引用locally-built-engine"><a href="#引用locally-built-engine" class="headerlink" title="引用locally-built engine"></a>引用locally-built engine</h3><p>引用engine建议采用WIKI [The-flutter-tool] (<a href="https://github.com/flutter/flutter/wiki/The-flutter-tool" target="_blank" rel="noopener">https://github.com/flutter/flutter/wiki/The-flutter-tool</a>) 推荐的参数形式，例如:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A typical invocation would be: --local-engine-src-path /path/to/engine/src --local-engine=android_debug_unopt.</span><br></pre></td></tr></table></figure></p>
+<h3 id="引用locally-built-engine"><a href="#引用locally-built-engine" class="headerlink" title="引用locally-built engine"></a>引用locally-built engine</h3><p>引用engine建议采用WIKI <a href="https://github.com/flutter/flutter/wiki/The-flutter-tool" target="_blank" rel="noopener">The-flutter-tool</a> 推荐的参数形式，例如:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A typical invocation would be: --local-engine-src-path /path/to/engine/src --local-engine=android_debug_unopt.</span><br></pre></td></tr></table></figure></p>
 <p>当然也可以通过直接替换方式，把flutter SDK bin/cache/artifacts/engine目录下的相应文件进行替换，这里不做推荐。</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>1.Setting-up-the-Engine-development-environment：<a href="https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment" target="_blank" rel="noopener">Setting-up-the-Engine-development-environment</a><br>2.Compiling-the-engine: <a href="https://github.com/flutter/flutter/wiki/Compiling-the-engine" target="_blank" rel="noopener">Compiling-the-engine</a></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>1.Setting-up-the-Engine-development-environment：<a href="https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment" target="_blank" rel="noopener">https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment</a><br>2.Compiling-the-engine: <a href="https://github.com/flutter/flutter/wiki/Compiling-the-engine" target="_blank" rel="noopener">https://github.com/flutter/flutter/wiki/Compiling-the-engine</a></p>
 
       
     </div>
