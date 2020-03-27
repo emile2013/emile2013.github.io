@@ -96,18 +96,18 @@
 
 
 
-  <meta name="description" content="引言最近工作之外，时间稍有富余，便尝试在macOS环境下编译futter engine工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki Setting-up-the-Engine-development-environment下，碰到的问题，以及给出解决方案，不对依赖">
+  <meta name="description" content="引言由于网络和电脑存储问题，一直未在本地编译过engine。近期时间稍有富余，便着手在macOS环境下编译futter engine工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki Setting-up-the-Engine-development-environme">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MacOS环境下Flutter Engine编译纪要">
 <meta property="og:url" content="http://yoursite.com/2020/03/27/MacOS环境下Flutter Engine编译纪要/index.html">
 <meta property="og:site_name" content="y.huang&#39;s Blog">
-<meta property="og:description" content="引言最近工作之外，时间稍有富余，便尝试在macOS环境下编译futter engine工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki Setting-up-the-Engine-development-environment下，碰到的问题，以及给出解决方案，不对依赖">
+<meta property="og:description" content="引言由于网络和电脑存储问题，一直未在本地编译过engine。近期时间稍有富余，便着手在macOS环境下编译futter engine工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki Setting-up-the-Engine-development-environme">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/clion_engine.png?raw=true">
-<meta property="og:updated_time" content="2020-03-27T04:28:35.150Z">
+<meta property="og:updated_time" content="2020-03-27T06:25:52.902Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MacOS环境下Flutter Engine编译纪要">
-<meta name="twitter:description" content="引言最近工作之外，时间稍有富余，便尝试在macOS环境下编译futter engine工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki Setting-up-the-Engine-development-environment下，碰到的问题，以及给出解决方案，不对依赖">
+<meta name="twitter:description" content="引言由于网络和电脑存储问题，一直未在本地编译过engine。近期时间稍有富余，便着手在macOS环境下编译futter engine工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki Setting-up-the-Engine-development-environme">
 <meta name="twitter:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/clion_engine.png?raw=true">
 
 
@@ -389,7 +389,7 @@
                 
               
 
-              <time title="Created: 2020-03-27 09:29:48 / Modified: 12:28:35" itemprop="dateCreated datePublished" datetime="2020-03-27T09:29:48+08:00">2020-03-27</time>
+              <time title="Created: 2020-03-27 09:29:48 / Modified: 14:25:52" itemprop="dateCreated datePublished" datetime="2020-03-27T09:29:48+08:00">2020-03-27</time>
             
 
             
@@ -453,7 +453,7 @@
       
 
       
-        <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>最近工作之外，时间稍有富余，便尝试在macOS环境下编译<a href="https://github.com/flutter/engine" target="_blank" rel="noopener">futter engine</a>工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki <a href="https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment" target="_blank" rel="noopener">Setting-up-the-Engine-development-environment</a>下，碰到的问题，以及给出解决方案，不对依赖工具作安装和介绍。<br><a id="more"></a></p>
+        <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>由于网络和电脑存储问题，一直未在本地编译过engine。近期时间稍有富余，便着手在macOS环境下编译<a href="https://github.com/flutter/engine" target="_blank" rel="noopener">futter engine</a>工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki <a href="https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment" target="_blank" rel="noopener">Setting-up-the-Engine-development-environment</a>下，碰到的问题，以及给出解决方案，不对依赖工具作安装和介绍。<br><a id="more"></a></p>
 <h2 id="过程纪要"><a href="#过程纪要" class="headerlink" title="过程纪要"></a>过程纪要</h2><h3 id="gclient-sync失败问题"><a href="#gclient-sync失败问题" class="headerlink" title="gclient sync失败问题"></a>gclient sync失败问题</h3><p>安装依赖工具，新建engine目录并配置.gclient文件后，我们执行gclient sync操作，这时我们可能会遇到http代理和engine/src/flutter/DEPS配置文件问题，具体如下。</p>
 <p>http代理问题：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RPC failed transiently. Will retry in 1m4s  &#123;&quot;error&quot;:&quot;failed to send request: Post https://chrome-infra-packages.appspot.com/prpc/cipd.Repository/GetInstanceURL: EOF&quot;, &quot;host&quot;:&quot;chrome-infra-packages.appspot.com&quot;, &quot;method&quot;:&quot;GetInstanceURL&quot;, &quot;service&quot;:&quot;cipd.Repository&quot;, &quot;sleepTime&quot;:&quot;1m4s&quot;&#125;</span><br></pre></td></tr></table></figure></p>
 <p>上述错误是我们无法访问chrome-infra-packages.appspot.com站点问题，需要配置http代理到我们本地http代理端口，可在命令窗口执行以下操作(其中端口号视本机具体配置改变)：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export http_proxy=http://127.0.0.1:1089</span><br><span class="line">export https_proxy=http://127.0.0.1:1089</span><br></pre></td></tr></table></figure></p>
