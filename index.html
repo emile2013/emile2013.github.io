@@ -389,12 +389,24 @@
                 
               
 
-              <time title="Created: 2020-05-02 07:58:12 / Modified: 08:43:25" itemprop="dateCreated datePublished" datetime="2020-05-02T07:58:12+08:00">2020-05-02</time>
+              <time title="Created: 2020-05-02 07:58:12" itemprop="dateCreated datePublished" datetime="2020-05-02T07:58:12+08:00">2020-05-02</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2020-05-03 09:21:08" itemprop="dateModified" datetime="2020-05-03T09:21:08+08:00">2020-05-03</time>
               
             
           </span>
@@ -447,12 +459,41 @@
 
       
         
-          <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>最近在写业务代码，接手了开发闪光灯功能需求。需求较为简单，在播放音乐时，在关键时间缀或时间段开闭闪光灯，实现音乐节奏和相机闪光联动。在Android上实现闪光灯，避谈功耗问题，我们还需要考虑以下风险：</p>
+          <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>最近接手了一个有意思的需求，需求较为简单，在播放音乐时，在关键时间缀或时间段开闭闪光灯，实现音乐节奏和相机闪光联动。在Android上实现快速开闭闪光灯，避谈功耗问题，我们还需要考虑以下风险：</p>
 <ul>
 <li>避免APP丢帧，闪光和音乐的联动，必须异步线程处理；</li>
-<li>不要太过频发调用Camera，建议最小与系统vsync信号周期一致，即16ms;</li>
-<li>Camera是共用的硬件资源，使用前要检测Camera是否可用，多摄像头设备上还需选取摄像头，使用中必须响应Camera API回调；</li>
-<li>需要兼容手机厂商ROM包碎片化带来的一些问题，诸如魅族等设备与AOSP实现有出入；<br>技术方案并不复杂，我们可以参考AOSP FlashlightController实现，本文记录在研发过程发现的问题，避免其他团队重复入局踩坑。
+<li>不能太过频发调用Camera，建议最小与系统vsync信号周期一致，即16ms;</li>
+<li>Camera是共用的硬件资源，多摄像头设备上还需选取摄像头，使用中必须响应Camera或Torch回调；</li>
+<li>需要兼容手机厂商ROM包碎片化带来的一些问题，诸如魅族等设备与<a href="https://source.android.com/" target="_blank" rel="noopener">AOSP</a>实现有出入；  </li>
+</ul>
+<p>在Android中，以Marshmallow（6.0）版本为界，开闭闪光有以下三种实现方案：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>适用系统版本</th>
+<th>Camera 授权</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>surface方式</td>
+<td>Marshmallow以下</td>
+<td>不需要</td>
+</tr>
+<tr>
+<td>preview方式</td>
+<td>Marshmallow以下</td>
+<td>需要</td>
+</tr>
+<tr>
+<td>torchMode方式</td>
+<td>Marshmallow及以上</td>
+<td>不需要</td>
+</tr>
+</tbody>
+</table>
+<p>表格中的适用版本并不绝对，比如我们碰到了魅族有个7.0机型只适用preview方式。方案实现代码不复杂，我们可以参考AOSP FlashlightController实现。本文记录在研发过程发现的问题，避免其他团队重复入局踩坑。<br>
           <!--noindex-->
           
             <div class="post-button text-center">
@@ -464,7 +505,7 @@
           <!--/noindex-->
         
       
-    </li></ul></div>
+    </p></div>
 
     
 
