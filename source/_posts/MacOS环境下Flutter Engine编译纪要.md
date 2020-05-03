@@ -5,7 +5,7 @@ categories:
     - Flutter
 ---
 ## 引言
-最近工作之外，时间稍有富余，便尝试在macOS环境下编译[futter engine](https://github.com/flutter/engine)工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki [Setting-up-the-Engine-development-environment](https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment)下，碰到的问题，以及给出解决方案，不对依赖工具作安装和介绍。
+由于网络和电脑存储问题，一直未在本地编译过engine。近期时间稍有富余，便着手在macOS环境下编译[futter engine](https://github.com/flutter/engine)工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki [Setting-up-the-Engine-development-environment](https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment)下，碰到的问题，以及给出解决方案，不对依赖工具作安装和介绍。
 <!-- more -->
 ## 过程纪要
 ### gclient sync失败问题
@@ -51,7 +51,7 @@ Syncing projects: 100% (102/102), done.
 ```
 
 ### 导入engine源码
-我们可以采用CLion IDEA来阅读engine源码，参考flutter wiki [Compiling-the-engine](https://github.com/flutter/flutter/wiki/Compiling-the-engine),执行gn命令或ninja编译后就可以导入engine源码了（建议ninja编译成功后导入，不然会因大量中间文件不存在报红）。这里以软链方式进行导入:
+我们可以采用CLion IDE来阅读engine源码，参考flutter wiki [Compiling-the-engine](https://github.com/flutter/flutter/wiki/Compiling-the-engine),执行gn命令生成compile_commands.json文件就可以导入engine源码了。这里以软链方式进行导入:
 >建立软链
 
 ```
@@ -66,7 +66,7 @@ clion打开上一步软链compile_commands.json文件，导入时间可能较长
 
 ### 引用locally-built engine
 
-引用engine建议采用WIKI [The-flutter-tool] (https://github.com/flutter/flutter/wiki/The-flutter-tool) 推荐的参数形式，例如:
+引用engine建议采用WIKI [The-flutter-tool](https://github.com/flutter/flutter/wiki/The-flutter-tool) 推荐的参数形式，例如:
 ```
 A typical invocation would be: --local-engine-src-path /path/to/engine/src --local-engine=android_debug_unopt.
 ```
@@ -74,5 +74,5 @@ A typical invocation would be: --local-engine-src-path /path/to/engine/src --loc
 
 ## 参考
 
-1.Setting-up-the-Engine-development-environment：[Setting-up-the-Engine-development-environment](https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment)  
-2.Compiling-the-engine: [Compiling-the-engine](https://github.com/flutter/flutter/wiki/Compiling-the-engine)
+1.Setting-up-the-Engine-development-environment：https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment
+2.Compiling-the-engine: https://github.com/flutter/flutter/wiki/Compiling-the-engine
