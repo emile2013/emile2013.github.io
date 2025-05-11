@@ -102,5 +102,5 @@ theme: next
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: git
-  repo: https://github.com/emile2013/emile2013.github.io.git
+  repo: git@github.com:emile2013/emile2013.github.io.git
   branch: master
