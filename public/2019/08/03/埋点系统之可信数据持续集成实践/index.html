@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="引言埋点数据，必须是准确的、完备的，否则无法为上层BI产品提供可信数据。端数据采集方案可简单归类为手动埋点、可视化埋点以及无痕埋点三大类。在高DAU APP中，要完全脱离手动埋点，实行无痕埋点方案，在网络带宽、数据存储等方面会带来一定的压力。我司目前停留在手动埋点阶段，在实践过程，我们发现，由于手动埋点依赖上层业务开发人员，也较容易出现漏埋和错埋，并且错误数据的发现存在滞后性，往往在BI输出产品阶">
+<meta property="og:type" content="article">
+<meta property="og:title" content="埋点系统之可信数据采集持续集成实践">
+<meta property="og:url" content="http://example.com/2019/08/03/%E5%9F%8B%E7%82%B9%E7%B3%BB%E7%BB%9F%E4%B9%8B%E5%8F%AF%E4%BF%A1%E6%95%B0%E6%8D%AE%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%AE%9E%E8%B7%B5/index.html">
+<meta property="og:site_name" content="y.huang&#39;s Blog">
+<meta property="og:description" content="引言埋点数据，必须是准确的、完备的，否则无法为上层BI产品提供可信数据。端数据采集方案可简单归类为手动埋点、可视化埋点以及无痕埋点三大类。在高DAU APP中，要完全脱离手动埋点，实行无痕埋点方案，在网络带宽、数据存储等方面会带来一定的压力。我司目前停留在手动埋点阶段，在实践过程，我们发现，由于手动埋点依赖上层业务开发人员，也较容易出现漏埋和错埋，并且错误数据的发现存在滞后性，往往在BI输出产品阶">
+<meta property="og:locale">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/splash.png?raw=true">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/filter.png?raw=true">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/state.png?raw=true">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/android1.png?raw=true">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/android2.png?raw=true">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/android3.png?raw=true">
+<meta property="article:published_time" content="2019-08-03T08:53:27.000Z">
+<meta property="article:modified_time" content="2025-06-02T13:15:33.845Z">
+<meta property="article:author" content="y.huang">
+<meta property="article:tag" content="埋点系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/splash.png?raw=true">
+
+<link rel="canonical" href="http://example.com/2019/08/03/%E5%9F%8B%E7%82%B9%E7%B3%BB%E7%BB%9F%E4%B9%8B%E5%8F%AF%E4%BF%A1%E6%95%B0%E6%8D%AE%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%AE%9E%E8%B7%B5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>埋点系统之可信数据采集持续集成实践 | y.huang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">y.huang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Coder</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/08/03/%E5%9F%8B%E7%82%B9%E7%B3%BB%E7%BB%9F%E4%B9%8B%E5%8F%AF%E4%BF%A1%E6%95%B0%E6%8D%AE%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%AE%9E%E8%B7%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="y.huang">
+      <meta itemprop="description" content="一个需要运动的程序员">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="y.huang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          埋点系统之可信数据采集持续集成实践
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-03 16:53:27" itemprop="dateCreated datePublished" datetime="2019-08-03T16:53:27+08:00">2019-08-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-02 21:15:33" itemprop="dateModified" datetime="2025-06-02T21:15:33+08:00">2025-06-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>埋点数据，必须是准确的、完备的，否则无法为上层BI产品提供可信数据。端数据采集方案可简单归类为手动埋点、可视化埋点以及无痕埋点三大类。在高DAU APP中，要完全脱离手动埋点，实行无痕埋点方案，在网络带宽、数据存储等方面会带来一定的压力。我司目前停留在手动埋点阶段，在实践过程，我们发现，由于手动埋点依赖上层业务开发人员，也较容易出现漏埋和错埋，并且错误数据的发现存在滞后性，往往在BI输出产品阶段才被发现。<br>为保证数据的可靠性，以及尽量减少开发人员对埋点的工作投入，我们做了以下几方面工作：  </p>
+<ol>
+<li>在浏览器端，提供埋点管理平台，为BI、测试、开发等角色提供事件定义、埋点版本追踪、数据验收、数据回归测试等持续集成功能；  </li>
+<li>在手持端，在APP中嵌入可视化埋点工具，为开发与测试同学提供实时数据校验功能；  </li>
+<li>简化开发同学编码：控件点击、页面曝光只需一行代码；页面等事件无需开发同学关注，埋点SDK自动上报并补全设备和用户信息；</li>
+</ol>
+<span id="more"></span>
+
+<p>部分术语</p>
+<blockquote>
+<p>埋点协议：规范一条埋点数据格式，数据对象中各字段含义以及取值来源；协议要尽量涵盖Android和iOS设备纬度信息、用户信息、以及业务自身数据；<br>埋点事件：标识一个原子操作，比如一次控件点击、一次网络请求；<br>业务埋点事件：BI或业务关心的数据，比如用户注册、控件点击，页面路径；<br>技术埋点事件：大部分是开发人员关注的数据，可用于各性能指标的统计，比如网络事件、CDN健康状态事件；  </p>
+</blockquote>
+<h1 id="埋点管理平台"><a href="#埋点管理平台" class="headerlink" title="埋点管理平台"></a>埋点管理平台</h1><p>埋点管理平台承载以下基础功能：<br>1、规范和约束事件定义；<br>2、业务埋点持续集成，BI编辑埋点、开发查看变更埋点和测试人工&#x2F;自动化测试埋点；<br>3、业务埋点测试辅助，如埋点回归验证；<br>4、基于规范化埋点管理，输出数据相关服务，如 kibana自动化查询业务数据需求；  </p>
+<p>本文我们只关注，如果让数据开发与验收成为持续集成中不可或缺的一环。</p>
+<h2 id="埋点流程"><a href="#埋点流程" class="headerlink" title="埋点流程"></a>埋点流程</h2><p>在APP版本研发前，产品同学会提出需求，以及他们所关心的数据。BI同学会与产品同学沟通，输出必要的业务埋点事件，同时录入埋点管理平台，如下图:<br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/splash.png?raw=true"><br>埋点管理平台，提供埋点查询与过滤功能。例如，我们提供APP版本、开发同学归属的埋点、埋点所处页面，区块等过滤条件；我们用颜色区分埋点事件的状态，如红色标识为变更埋点，黄色标识为新增埋点等。通过各维度查询，尽量让开发和测试同学快速找到关心的埋点数据。<br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/filter.png?raw=true"><br>开发同学收到埋点通知后，进行埋点开发，自测通过后在埋点管理平台进行开发状态确认。测试同学收到埋点开发完成通知，进行埋点测试与校验。<br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/state.png?raw=true"><br>通过埋点录入、埋点开发和校验，能极大减少漏埋和错埋的案例发生。</p>
+<h1 id="手持端数据校验"><a href="#手持端数据校验" class="headerlink" title="手持端数据校验"></a>手持端数据校验</h1><p>通过埋点管理平台，也无法完全杜绝漏埋和错埋，比如特殊场景下，es数据消费阻塞，开发和测试同学无法在浏览器端进行校验，这时就要在手持端进行校验工作了。</p>
+<p>手持端可视化埋点工具,要做到不能阻塞APP操作，以及要能实时显示埋点数据和数据汇总查询。借助<a target="_blank" rel="noopener" href="https://github.com/hyperion-project">hyperion</a>以及埋点SDK提供的功能，我们实现了最初的想法。部分截图如下：<br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/android1.png?raw=true"><br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/android2.png?raw=true"><br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/android3.png?raw=true"> </p>
+<h1 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h1><p>埋点这块，有很多可以和大家讨论的点，比如埋点SDK上报流程设计、前端与后台数据存储、实时和离线数据分析与利用。本文只是一个起点，后续会陆续分享出来我们现在的一些玩法，都是我们的一些实践。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%9F%8B%E7%82%B9%E7%B3%BB%E7%BB%9F/" rel="tag"># 埋点系统</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/07/19/%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BAAPT%E5%AE%A2%E6%88%B7%E5%8C%96/" rel="prev" title="插件化之AAPT客户化">
+      <i class="fa fa-chevron-left"></i> 插件化之AAPT客户化
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/09/20/%E6%B2%BB%E7%90%86%E4%BB%A4%E4%BA%BA%E5%A4%B4%E7%97%9B%E7%9A%84pthread-create-OutOfMemoryError%E9%94%99%E8%AF%AF/" rel="next" title="治理令人头痛的pthread_create OutOfMemoryError错误">
+      治理令人头痛的pthread_create OutOfMemoryError错误 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9F%8B%E7%82%B9%E7%AE%A1%E7%90%86%E5%B9%B3%E5%8F%B0"><span class="nav-number">2.</span> <span class="nav-text">埋点管理平台</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%8B%E7%82%B9%E6%B5%81%E7%A8%8B"><span class="nav-number">2.1.</span> <span class="nav-text">埋点流程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%89%8B%E6%8C%81%E7%AB%AF%E6%95%B0%E6%8D%AE%E6%A0%A1%E9%AA%8C"><span class="nav-number">3.</span> <span class="nav-text">手持端数据校验</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BB%93%E6%9D%9F%E8%AF%AD"><span class="nav-number">4.</span> <span class="nav-text">结束语</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">y.huang</p>
+  <div class="site-description" itemprop="description">一个需要运动的程序员</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">y.huang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

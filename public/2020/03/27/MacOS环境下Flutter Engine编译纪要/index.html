@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="引言由于网络和电脑存储问题，一直未在本地编译过engine。近期时间稍有富余，便着手在macOS环境下编译futter engine工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki Setting-up-the-Engine-development-environme">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MacOS环境下Flutter Engine编译纪要">
+<meta property="og:url" content="http://example.com/2020/03/27/MacOS%E7%8E%AF%E5%A2%83%E4%B8%8BFlutter%20Engine%E7%BC%96%E8%AF%91%E7%BA%AA%E8%A6%81/index.html">
+<meta property="og:site_name" content="y.huang&#39;s Blog">
+<meta property="og:description" content="引言由于网络和电脑存储问题，一直未在本地编译过engine。近期时间稍有富余，便着手在macOS环境下编译futter engine工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki Setting-up-the-Engine-development-environme">
+<meta property="og:locale">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/clion_engine.png?raw=true">
+<meta property="article:published_time" content="2020-03-27T01:29:48.000Z">
+<meta property="article:modified_time" content="2025-06-02T13:15:33.844Z">
+<meta property="article:author" content="y.huang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/clion_engine.png?raw=true">
+
+<link rel="canonical" href="http://example.com/2020/03/27/MacOS%E7%8E%AF%E5%A2%83%E4%B8%8BFlutter%20Engine%E7%BC%96%E8%AF%91%E7%BA%AA%E8%A6%81/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>MacOS环境下Flutter Engine编译纪要 | y.huang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">y.huang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Coder</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/03/27/MacOS%E7%8E%AF%E5%A2%83%E4%B8%8BFlutter%20Engine%E7%BC%96%E8%AF%91%E7%BA%AA%E8%A6%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="y.huang">
+      <meta itemprop="description" content="一个需要运动的程序员">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="y.huang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MacOS环境下Flutter Engine编译纪要
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-03-27 09:29:48" itemprop="dateCreated datePublished" datetime="2020-03-27T09:29:48+08:00">2020-03-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-02 21:15:33" itemprop="dateModified" datetime="2025-06-02T21:15:33+08:00">2025-06-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Flutter/" itemprop="url" rel="index"><span itemprop="name">Flutter</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>由于网络和电脑存储问题，一直未在本地编译过engine。近期时间稍有富余，便着手在macOS环境下编译<a target="_blank" rel="noopener" href="https://github.com/flutter/engine">futter engine</a>工程，以方便阅读engine源码和定制化engine。编译flutter不复杂，只是在国内，我们需要翻墙开放给gclient等工具下载源码。本文仅记录在参考flutter wiki <a target="_blank" rel="noopener" href="https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment">Setting-up-the-Engine-development-environment</a>下，碰到的问题，以及给出解决方案，不对依赖工具作安装和介绍。</p>
+<span id="more"></span>
+<h2 id="过程纪要"><a href="#过程纪要" class="headerlink" title="过程纪要"></a>过程纪要</h2><h3 id="gclient-sync失败问题"><a href="#gclient-sync失败问题" class="headerlink" title="gclient sync失败问题"></a>gclient sync失败问题</h3><p>安装依赖工具，新建engine目录并配置.gclient文件后，我们执行gclient sync操作，这时我们可能会遇到http代理和engine&#x2F;src&#x2F;flutter&#x2F;DEPS配置文件问题，具体如下。</p>
+<p>http代理问题：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RPC failed transiently. Will retry in 1m4s  &#123;&quot;error&quot;:&quot;failed to send request: Post https://chrome-infra-packages.appspot.com/prpc/cipd.Repository/GetInstanceURL: EOF&quot;, &quot;host&quot;:&quot;chrome-infra-packages.appspot.com&quot;, &quot;method&quot;:&quot;GetInstanceURL&quot;, &quot;service&quot;:&quot;cipd.Repository&quot;, &quot;sleepTime&quot;:&quot;1m4s&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上述错误是我们无法访问chrome-infra-packages.appspot.com站点问题，需要配置http代理到我们本地http代理端口，可在命令窗口执行以下操作(其中端口号视本机具体配置改变)：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export http_proxy=http://127.0.0.1:1089</span><br><span class="line">export https_proxy=http://127.0.0.1:1089</span><br></pre></td></tr></table></figure>
+
+<p>engine&#x2F;src&#x2F;flutter&#x2F;DEPS配置文件问题出现在重复配置了’src&#x2F;third_party&#x2F;dart&#x2F;tools&#x2F;sdks’和’src&#x2F;third_party&#x2F;dart&#x2F;pkg&#x2F;analysis_server&#x2F;language_model’两项（基于engine 8d6f008fb commit）,解决此错误，我们只需删除以下重复配置即可：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&#x27;src/third_party/dart/tools/sdks&#x27;: &#123;</span><br><span class="line">  &#x27;packages&#x27;: [</span><br><span class="line">    &#123;</span><br><span class="line">      &#x27;package&#x27;: &#x27;dart/dart-sdk/$&#123;&#123;platform&#125;&#125;&#x27;,</span><br><span class="line">      &#x27;version&#x27;: &#x27;version:2.4.0&#x27;</span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  &#x27;dep_type&#x27;: &#x27;cipd&#x27;,</span><br><span class="line">&#125;,</span><br><span class="line"></span><br><span class="line">&#x27;src/third_party/dart/pkg/analysis_server/language_model&#x27;: &#123;</span><br><span class="line">  &#x27;packages&#x27;: [</span><br><span class="line">    &#123;</span><br><span class="line">     &#x27;package&#x27;: &#x27;dart/language_model&#x27;,</span><br><span class="line">     &#x27;version&#x27;: &#x27;EFtZ0Z5T822s4EUOOaWeiXUppRGKp5d9Z6jomJIeQYcC&#x27;,</span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  &#x27;dep_type&#x27;: &#x27;cipd&#x27;,</span><br><span class="line">&#125;,</span><br></pre></td></tr></table></figure>
+
+<p>gclient sync过程中，我们不能强制结束gclient sync进程，可能很多小伙伴和我一样，看到以下输出认为gclient sync已结束，但其实不然，gclient还在继续工作。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Syncing projects: 100% (102/102), done.</span><br></pre></td></tr></table></figure>
+
+<h3 id="导入engine源码"><a href="#导入engine源码" class="headerlink" title="导入engine源码"></a>导入engine源码</h3><p>我们可以采用CLion IDE来阅读engine源码，参考flutter wiki <a target="_blank" rel="noopener" href="https://github.com/flutter/flutter/wiki/Compiling-the-engine">Compiling-the-engine</a>,执行gn命令生成compile_commands.json文件就可以导入engine源码了。这里以软链方式进行导入:</p>
+<blockquote>
+<p>建立软链</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">在src/futter目录执行</span><br><span class="line">ln -s /Users/xxx/engine/src/out/compile_commands.json /compile_commands.json</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>导入CLion</p>
+</blockquote>
+<p>clion打开上一步软链compile_commands.json文件，导入时间可能较长，耐心等待即可。<br><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/clion_engine.png?raw=true"> </p>
+<h3 id="引用locally-built-engine"><a href="#引用locally-built-engine" class="headerlink" title="引用locally-built engine"></a>引用locally-built engine</h3><p>引用engine建议采用WIKI <a target="_blank" rel="noopener" href="https://github.com/flutter/flutter/wiki/The-flutter-tool">The-flutter-tool</a> 推荐的参数形式，例如:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A typical invocation would be: --local-engine-src-path /path/to/engine/src --local-engine=android_debug_unopt.</span><br></pre></td></tr></table></figure>
+<p>当然也可以通过直接替换方式，把flutter SDK bin&#x2F;cache&#x2F;artifacts&#x2F;engine目录下的相应文件进行替换，这里不做推荐。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>1.Setting-up-the-Engine-development-environment：<a target="_blank" rel="noopener" href="https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment">https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment</a><br>2.Compiling-the-engine: <a target="_blank" rel="noopener" href="https://github.com/flutter/flutter/wiki/Compiling-the-engine">https://github.com/flutter/flutter/wiki/Compiling-the-engine</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/12/12/%E4%BB%8B%E7%BB%8D%E4%B8%A4%E6%AC%BEandroidX%E8%BF%81%E7%A7%BB%E5%88%A9%E5%99%A8/" rel="prev" title="介绍两款androidX迁移利器">
+      <i class="fa fa-chevron-left"></i> 介绍两款androidX迁移利器
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/02/%E5%BF%AB%E9%80%9F%E5%BC%80%E9%97%AD%E9%97%AA%E5%85%89%E7%81%AF%E5%AE%9E%E7%8E%B0%E4%B8%8E%E9%A3%8E%E9%99%A9%E8%A7%84%E9%81%BF/" rel="next" title="快速开闭闪光灯实现与风险规避">
+      快速开闭闪光灯实现与风险规避 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%87%E7%A8%8B%E7%BA%AA%E8%A6%81"><span class="nav-number">2.</span> <span class="nav-text">过程纪要</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#gclient-sync%E5%A4%B1%E8%B4%A5%E9%97%AE%E9%A2%98"><span class="nav-number">2.1.</span> <span class="nav-text">gclient sync失败问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%BC%E5%85%A5engine%E6%BA%90%E7%A0%81"><span class="nav-number">2.2.</span> <span class="nav-text">导入engine源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%95%E7%94%A8locally-built-engine"><span class="nav-number">2.3.</span> <span class="nav-text">引用locally-built engine</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">y.huang</p>
+  <div class="site-description" itemprop="description">一个需要运动的程序员</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">y.huang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

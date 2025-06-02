@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="引言在Android中，独立窗口自绘渲染，典型应用场景比如SurfaceView与手机双边侧滑返回动画面板（WMS.addView）。最近入职一家新公司，涉及对接更底层渲染实现，具体表现在NDK层，获取一个独立Window窗口，上层用Skia进行绘制，并在Android系统中渲染出来。本文旨在分析WMS.addView链路，明淅渲染关键路径，为后面自定义渲染作支持。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android独立窗口自绘渲染实现">
+<meta property="og:url" content="http://example.com/2025/05/03/Android%E6%B8%B2%E6%9F%93%E4%B9%8BSurface%E4%B8%8EANativeWindow/index.html">
+<meta property="og:site_name" content="y.huang&#39;s Blog">
+<meta property="og:description" content="引言在Android中，独立窗口自绘渲染，典型应用场景比如SurfaceView与手机双边侧滑返回动画面板（WMS.addView）。最近入职一家新公司，涉及对接更底层渲染实现，具体表现在NDK层，获取一个独立Window窗口，上层用Skia进行绘制，并在Android系统中渲染出来。本文旨在分析WMS.addView链路，明淅渲染关键路径，为后面自定义渲染作支持。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-05-03T11:19:19.000Z">
+<meta property="article:modified_time" content="2025-06-02T13:15:33.844Z">
+<meta property="article:author" content="y.huang">
+<meta property="article:tag" content="渲染">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/05/03/Android%E6%B8%B2%E6%9F%93%E4%B9%8BSurface%E4%B8%8EANativeWindow/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>Android独立窗口自绘渲染实现 | y.huang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">y.huang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Coder</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/05/03/Android%E6%B8%B2%E6%9F%93%E4%B9%8BSurface%E4%B8%8EANativeWindow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="y.huang">
+      <meta itemprop="description" content="一个需要运动的程序员">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="y.huang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Android独立窗口自绘渲染实现
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-03 19:19:19" itemprop="dateCreated datePublished" datetime="2025-05-03T19:19:19+08:00">2025-05-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-02 21:15:33" itemprop="dateModified" datetime="2025-06-02T21:15:33+08:00">2025-06-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>在Android中，独立窗口自绘渲染，典型应用场景比如SurfaceView与手机双边侧滑返回动画面板（WMS.addView）。最近入职一家新公司，涉及对接更底层渲染实现，具体表现在NDK层，获取一个独立Window窗口，上层用Skia进行绘制，并在Android系统中渲染出来。本文旨在分析WMS.addView链路，明淅渲染关键路径，为后面自定义渲染作支持。</p>
+<span id="more"></span>
+<h1 id="核心类说明"><a href="#核心类说明" class="headerlink" title="核心类说明"></a>核心类说明</h1><p>在 Android 系统中，独立窗口自绘渲染，绕不开<code>Surface</code> 和 <code>ANativeWindow</code> ，二者是与图形渲染和窗口管理相关的核心类，它们的关系和功能可以总结如下：</p>
+<h2 id="类结构解释"><a href="#类结构解释" class="headerlink" title="类结构解释"></a><strong>类结构解释</strong></h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Surface</span> : <span class="keyword">public</span> ANativeObjectBase&lt;ANativeWindow, Surface, RefBase&gt;&#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>继承关系</strong>：<br><code>Surface</code> 继承自模板类 <code>ANativeObjectBase&lt;ANativeWindow, Surface, RefBase&gt;</code>。</li>
+<li><strong>模板参数含义</strong>：<ul>
+<li><strong><code>ANativeWindow</code></strong>：表示底层的原生窗口接口。</li>
+<li><strong><code>Surface</code></strong>：子类自身（使用 CRTP 模式，允许基类调用子类方法）。</li>
+<li><strong><code>RefBase</code></strong>：Android 的引用计数基类，用于对象生命周期管理。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="Surface-的作用"><a href="#Surface-的作用" class="headerlink" title="Surface 的作用"></a><strong>Surface 的作用</strong></h2><ul>
+<li><strong>图形渲染的抽象层</strong>：<br><code>Surface</code> 是 Android 应用与显示系统之间的桥梁，代表一个可绘制的表面。应用程序通过 <code>Surface</code> 进行 UI 渲染（例如通过 Canvas 或 OpenGL ES）。</li>
+<li><strong>跨进程通信</strong>：<br><code>Surface</code> 实现了 <code>Parcelable</code> 接口，可跨进程传递（如从应用进程传递到 SurfaceFlinger 服务进程）。</li>
+<li><strong>缓冲区管理</strong>：<br>管理图形缓冲区队列（<code>BufferQueue</code>），协调生产者和消费者（如应用和 SurfaceFlinger）之间的缓冲区交换。</li>
+</ul>
+<hr>
+<h2 id="ANativeWindow-的作用"><a href="#ANativeWindow-的作用" class="headerlink" title="ANativeWindow 的作用"></a><strong>ANativeWindow 的作用</strong></h2><ul>
+<li><strong>原生窗口的 C 接口</strong>：<br><code>ANativeWindow</code> 是 Android NDK 中定义的抽象，提供对底层窗口系统的访问（如通过 <code>ANativeWindow_fromSurface()</code> 获取）。</li>
+<li><strong>跨平台兼容性</strong>：<br>封装了不同硬件&#x2F;平台的窗口操作（例如设置缓冲区大小、格式，提交渲染结果）。</li>
+<li><strong>与 Surface 的关系</strong>：<br><code>ANativeWindow</code> 是 <code>Surface</code> 的底层接口，<code>Surface</code> 类通过继承 <code>ANativeObjectBase</code> 实现了 <code>ANativeWindow</code> 的功能。</li>
+</ul>
+<hr>
+<h2 id="两者关系"><a href="#两者关系" class="headerlink" title="两者关系"></a><strong>两者关系</strong></h2><ol>
+<li><strong>继承与封装</strong>：<br><code>Surface</code> 是 <code>ANativeWindow</code> 的高层封装，提供更易用的 C++ API，而 <code>ANativeWindow</code> 是底层的 C 风格接口。</li>
+<li><strong>功能实现</strong>：<br><code>Surface</code> 通过 <code>ANativeObjectBase</code> 模板类继承 <code>ANativeWindow</code> 的接口，并实现其方法（如 <code>dequeueBuffer</code>&#x2F;<code>queueBuffer</code>），最终通过 <code>RefBase</code> 管理生命周期。</li>
+<li><strong>使用场景</strong>：<ul>
+<li><strong>Java&#x2F;Kotlin 层</strong>：通过 <code>Surface</code> 类进行 UI 渲染。</li>
+<li><strong>Native 层（NDK）</strong>：通过 <code>ANativeWindow</code> 直接操作窗口（例如 Vulkan&#x2F;OpenGL ES 渲染）。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h2><ul>
+<li><strong><code>ANativeWindow</code></strong>：底层原生窗口接口，提供跨平台的窗口操作（NDK 使用）。</li>
+<li><strong><code>Surface</code></strong>：高层封装，整合 <code>ANativeWindow</code> 功能并提供 Android 框架级的渲染管理。</li>
+<li><strong>关系</strong>：<code>Surface</code> 是 <code>ANativeWindow</code> 的面向对象实现，二者共同服务于图形渲染，前者用于 Java&#x2F;C++ 框架层，后者用于更接近硬件的 NDK 层。</li>
+</ul>
+<h1 id="WMS-addView自绘链路"><a href="#WMS-addView自绘链路" class="headerlink" title="WMS.addView自绘链路"></a>WMS.addView自绘链路</h1><p>在Android 10及以后，WMS.addView可以以侧滑返回动画面板实现代码作说明，代码主要在<a target="_blank" rel="noopener" href="https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/packages/SystemUI/src/com/android/systemui/navigationbar/gestural/">systemui&#x2F;navigationbar&#x2F;gestural</a>，核心类EdgeBackGestureHandler、BackPanelController、BackPanel，这三个组件共同构成了 Android 的边缘返回手势系统，提供流畅的用户体验，是一个WMS.addView应用场景。<br>其中ViewCaptureAwareWindowManager以一个独立的Window添加BackPanel（View），BackPanel响应相应滑动事件，用Canvas做自绘实现,具体链路包括：</p>
+<h2 id="BackPanelController-setLayoutParams"><a href="#BackPanelController-setLayoutParams" class="headerlink" title="BackPanelController#setLayoutParams"></a><strong><a target="_blank" rel="noopener" href="https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/packages/SystemUI/src/com/android/systemui/navigationbar/gestural/EdgeBackGestureHandler.java;drc=61197364367c9e404c7da6900658f1b16c42d0da;bpv=0;bpt=1;l=813">BackPanelController#setLayoutParams</a></strong></h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SystemUI/src/com/android/systemui/navigationbar/gestural/EdgeBackGestureHandler</span></span><br><span class="line">override fun <span class="title function_">setLayoutParams</span><span class="params">(layoutParams: WindowManager.LayoutParams)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.layoutParams = layoutParams</span><br><span class="line">        windowManager.addView(mView, layoutParams)</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>layoutParams来自EdgeBackGestureHandler#createLayoutParams</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SystemUI/src/com/android/systemui/navigationbar/gestural/EdgeBackGestureHandler</span></span><br><span class="line">    <span class="keyword">private</span> WindowManager.LayoutParams <span class="title function_">createLayoutParams</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Resources</span> <span class="variable">resources</span> <span class="operator">=</span> mContext.getResources();</span><br><span class="line">        <span class="comment">//TYPE_NAVIGATION_BAR_PANEL: 表示这是一个导航栏面板窗口,优先级低于系统UI但高于普通应用</span></span><br><span class="line">        <span class="comment">//FLAG_NOT_FOCUSABLE: 窗口不能获得焦点</span></span><br><span class="line">        <span class="comment">//FLAG_NOT_TOUCHABLE: 窗口不接收触摸事件</span></span><br><span class="line">        <span class="comment">//FLAG_LAYOUT_IN_SCREEN: 窗口布局在屏幕坐标系中</span></span><br><span class="line">        WindowManager.<span class="type">LayoutParams</span> <span class="variable">layoutParams</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">WindowManager</span>.LayoutParams(</span><br><span class="line">                resources.getDimensionPixelSize(R.dimen.navigation_edge_panel_width),</span><br><span class="line">                resources.getDimensionPixelSize(R.dimen.navigation_edge_panel_height),</span><br><span class="line">                WindowManager.LayoutParams.TYPE_NAVIGATION_BAR_PANEL,</span><br><span class="line">                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE</span><br><span class="line">                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE</span><br><span class="line">                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,</span><br><span class="line">                PixelFormat.TRANSLUCENT); <span class="comment">//半透明</span></span><br><span class="line">        layoutParams.accessibilityTitle = mContext.getString(R.string.nav_bar_edge_panel);</span><br><span class="line">        layoutParams.windowAnimations = <span class="number">0</span>;</span><br><span class="line">        layoutParams.privateFlags |=</span><br><span class="line">                (WindowManager.LayoutParams.SYSTEM_FLAG_SHOW_FOR_ALL_USERS</span><br><span class="line">                | PRIVATE_FLAG_EXCLUDE_FROM_SCREEN_MAGNIFICATION);</span><br><span class="line">        layoutParams.setTitle(TAG + mContext.getDisplayId());</span><br><span class="line">        layoutParams.setFitInsetsTypes(<span class="number">0</span> <span class="comment">/* types */</span>);</span><br><span class="line">        layoutParams.setTrustedOverlay();</span><br><span class="line">        <span class="keyword">return</span> layoutParams;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="WindowManager-addView-绑定Window"><a href="#WindowManager-addView-绑定Window" class="headerlink" title="WindowManager.addView 绑定Window"></a><strong>WindowManager.addView 绑定Window</strong></h2><p>WindowManager.addView与WMS处理Window绑定。</p>
+<ol>
+<li><strong>WindowManager.addView 调用链</strong>：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/view/WindowManagerImpl.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addView</span><span class="params">(View view, ViewGroup.LayoutParams params)</span> &#123;</span><br><span class="line">    mGlobal.addView(view, params, mContext.getDisplay(), mParentWindow);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>WindowManagerGlobal 中的处理</strong>：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/view/WindowManagerGlobal.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addView</span><span class="params">(View view, ViewGroup.LayoutParams params,</span></span><br><span class="line"><span class="params">        Display display, Window parentWindow)</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 1. 创建 ViewRootImpl</span></span><br><span class="line">    <span class="keyword">if</span> (windowlessSession == <span class="literal">null</span>) &#123;</span><br><span class="line">       root = <span class="keyword">new</span> <span class="title class_">ViewRootImpl</span>(view.getContext(), display);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">       root = <span class="keyword">new</span> <span class="title class_">ViewRootImpl</span>(view.getContext(), display,</span><br><span class="line">                        windowlessSession, <span class="keyword">new</span> <span class="title class_">WindowlessWindowLayout</span>());</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 2. 保存引用</span></span><br><span class="line">    mViews.add(view);</span><br><span class="line">    mRoots.add(root);</span><br><span class="line">    mParams.add(wparams);</span><br><span class="line"></span><br><span class="line">     <span class="comment">// 3. 设置参数</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        root.setView(view, wparams, panelParentView, userId);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RuntimeException e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> e;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li><strong><code>ViewRootImpl.setView()</code> 触发窗口创建</strong><br>在 <code>setView()</code> 中，通过 IPC 调用 <code>WindowManagerService</code> 创建窗口：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ViewRootImpl.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setView</span><span class="params">(View view, WindowManager.LayoutParams attrs, View panelParentView, <span class="type">int</span> userId)</span> &#123;</span><br><span class="line">    <span class="comment">// ... 其他逻辑</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 通过 mWindowSession （WindowManagerGlobal.getWindowSession()）与 WMS 通信</span></span><br><span class="line">        mWindowSession.addToDisplayAsUser(</span><br><span class="line">            mWindow, mWindowAttributes, getHostVisibility(), mDisplay.getDisplayId(), userId,</span><br><span class="line">            mInsetsController.getRequestedVisibility(), inputChannel, mTempInsets, mControls);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">        <span class="comment">// 处理异常</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//frameworks/base/services/core/java/com/android/server/wm/Session.java</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">addToDisplayAsUser</span><span class="params">(IWindow window, WindowManager.LayoutParams attrs,</span></span><br><span class="line"><span class="params">            <span class="type">int</span> viewVisibility, <span class="type">int</span> displayId, <span class="type">int</span> userId, <span class="meta">@InsetsType</span> <span class="type">int</span> requestedVisibleTypes,</span></span><br><span class="line"><span class="params">            InputChannel outInputChannel, InsetsState outInsetsState,</span></span><br><span class="line"><span class="params">            InsetsSourceControl.Array outActiveControls, Rect outAttachedFrame,</span></span><br><span class="line"><span class="params">            <span class="type">float</span>[] outSizeCompatScale)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> mService.addWindow(<span class="built_in">this</span>, window, attrs, viewVisibility, displayId, userId,</span><br><span class="line">                requestedVisibleTypes, outInputChannel, outInsetsState, outActiveControls,</span><br><span class="line">                outAttachedFrame, outSizeCompatScale);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong><code>mWindowSession</code></strong> 是 <code>IWindowSession</code> 的实例，由 <code>WindowManagerGlobal</code> 创建，是 App 进程与 WMS 通信的代理。</li>
+<li><strong><code>addToDisplayAsUser</code></strong> 是 IPC 调用，通知 WMS 创建窗口并分配资源。</li>
+</ul>
+<p>在 WMS 服务端，<code>Session.addToDisplayAsUser()</code> 最终会创建 <code>WindowState</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// WindowManagerService.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">addWindow</span><span class="params">(Session session, IWindow client, ...)</span> &#123;</span><br><span class="line">    <span class="comment">// ... 权限校验、参数处理</span></span><br><span class="line">    <span class="keyword">final</span> <span class="type">WindowState</span> <span class="variable">win</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">WindowState</span>(<span class="built_in">this</span>, session, client, token, parentWindow,</span><br><span class="line">            appOp[<span class="number">0</span>], seq, attrs, viewVisibility, session.mUid, userId);</span><br><span class="line">    win.mSession.onWindowAdded(win);</span><br><span class="line">    mWindowMap.put(client.asBinder(), win);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong><code>WindowState</code></strong> 是 WMS 中窗口的抽象，管理窗口的层级、可见性等。</li>
+</ul>
+<h2 id="ViewRootImpl-relayoutWindow-绑定Surface"><a href="#ViewRootImpl-relayoutWindow-绑定Surface" class="headerlink" title="ViewRootImpl.relayoutWindow 绑定Surface"></a><strong><code>ViewRootImpl.relayoutWindow</code> 绑定Surface</strong></h2><p><code>SurfaceControl</code> 的创建实际发生在 <strong>窗口的首次布局（<code>performTraversals</code>）阶段</strong>，由 <code>WindowManagerService</code> 触发。关键流程如下：<br>在客户端（应用进程）的 <code>ViewRootImpl</code> 中，通过 IPC 调用 <code>WindowManagerService</code> 的 <code>relayoutWindow</code> 方法，请求更新窗口布局并创建 <code>Surface</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/view/ViewRootImpl.java</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">WindowRelayoutResult</span> <span class="variable">mRelayoutResult</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">WindowRelayoutResult</span>(</span><br><span class="line">            mTmpFrames, mPendingMergedConfiguration, mSurfaceControl, mTempInsets, mTempControls);</span><br><span class="line"><span class="keyword">private</span> <span class="type">int</span> <span class="title function_">relayoutWindow</span><span class="params">(WindowManager.LayoutParams params, ...)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    <span class="comment">// 调用 WMS 的 relayoutWindow 方法</span></span><br><span class="line">    relayoutResult = mWindowSession.relayout(mWindow, params,</span><br><span class="line">                    requestedWidth, requestedHeight, viewVisibility,</span><br><span class="line">                    insetsPending ? WindowManagerGlobal.RELAYOUT_INSETS_PENDING : <span class="number">0</span>,</span><br><span class="line">                    mRelayoutSeq, mLastSyncSeqId, mRelayoutResult);</span><br><span class="line">   <span class="keyword">if</span> (mSurfaceControl.isValid()) &#123;</span><br><span class="line">      updateBlastSurfaceIfNeeded();</span><br><span class="line">   &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Android 图形系统的底层优化,引入 BLAST (BufferQueue Layer State Traversal) 机制</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">updateBlastSurfaceIfNeeded</span><span class="params">()</span> &#123;</span><br><span class="line">        mBlastBufferQueue = <span class="keyword">new</span> <span class="title class_">BLASTBufferQueue</span>(mTag, mSurfaceControl,</span><br><span class="line">                mSurfaceSize.x, mSurfaceSize.y, mWindowAttributes.format);</span><br><span class="line">        mBlastBufferQueue.setTransactionHangCallback(sTransactionHangCallback);</span><br><span class="line">        mBlastBufferQueue.setApplyToken(mBbqApplyToken);</span><br><span class="line">        Surface blastSurface;</span><br><span class="line">        <span class="keyword">if</span> (addSchandleToVriSurface()) &#123;</span><br><span class="line">            blastSurface = mBlastBufferQueue.createSurfaceWithHandle();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            blastSurface = mBlastBufferQueue.createSurface();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 更新 Surface</span></span><br><span class="line">        mSurface.transferFrom(blastSurface);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//createSurfaceWithHandle或createSurface调用nativeGetSurface</span></span><br><span class="line"><span class="comment">// frameworks/base/libs/hwui/BLASTBufferQueue.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// JNI 转换</span></span><br><span class="line"><span class="comment">//通过 nativePtr 获取 Native 层的 BLASTBufferQueue 实例。</span></span><br><span class="line"><span class="comment">//调用 getSurface() 获取 sp&lt;Surface&gt;。</span></span><br><span class="line"><span class="comment">//使用 android_view_Surface_createFromSurface 将 Native Surface 转换为 Java Surface 对象。</span></span><br><span class="line"><span class="keyword">static</span> jobject <span class="title function_">BLASTBufferQueue_getSurface</span><span class="params">(JNIEnv* env, jclass clazz, jlong nativePtr)</span> &#123;</span><br><span class="line">    BLASTBufferQueue* bbq = reinterpret_cast&lt;BLASTBufferQueue*&gt;(nativePtr);</span><br><span class="line">    sp&lt;Surface&gt; surface = bbq-&gt;getSurface();</span><br><span class="line">    <span class="keyword">return</span> android_view_Surface_createFromSurface(env, surface);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// frameworks/native/libs/gui/BLASTBufferQueue.cpp</span></span><br><span class="line"><span class="comment">//Surface 是 ANativeWindow 的子类，其底层通过 IGraphicBufferProducer（生产者接口）与 BufferQueue 绑定。在 BLASTBufferQueue 中，生产者接口 mProducer 被传递给 Surface，使其能够通过 dequeueBuffer 和 queueBuffer 管理图形缓冲区</span></span><br><span class="line"><span class="comment">//Surface 内部持有 IGraphicBufferProducer</span></span><br><span class="line"><span class="comment">//BBQSurface继承Surface</span></span><br><span class="line">sp&lt;Surface&gt; BLASTBufferQueue::getSurface(bool includeSurfaceControlHandle) &#123;</span><br><span class="line">    std::lock_guard _lock&#123;mMutex&#125;;</span><br><span class="line">    sp&lt;IBinder&gt; scHandle = nullptr;</span><br><span class="line">    <span class="keyword">if</span> (includeSurfaceControlHandle &amp;&amp; mSurfaceControl) &#123;</span><br><span class="line">        scHandle = mSurfaceControl-&gt;getHandle();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">BBQSurface</span>(mProducer, <span class="literal">true</span>, scHandle, <span class="built_in">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在服务端（<code>WindowManagerService</code>），<code>mWindowSession.relayout</code> 最终会调用 <code>WindowStateAnimator.createSurfaceLocked()</code> 创建 <code>SurfaceControl</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//frameworks/base/services/core/java/com/android/server/wm/Session.java</span></span><br><span class="line"> <span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">relayout</span><span class="params">(IWindow window, WindowManager.LayoutParams attrs,</span></span><br><span class="line"><span class="params">            <span class="type">int</span> requestedWidth, <span class="type">int</span> requestedHeight, <span class="type">int</span> viewFlags, <span class="type">int</span> flags, <span class="type">int</span> seq,</span></span><br><span class="line"><span class="params">            <span class="type">int</span> lastSyncSeqId, WindowRelayoutResult outRelayoutResult)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">res</span> <span class="operator">=</span> mService.relayoutWindow(<span class="built_in">this</span>, window, attrs, requestedWidth,</span><br><span class="line">                requestedHeight, viewFlags, flags, seq, lastSyncSeqId, outRelayoutResult);</span><br><span class="line">        <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowManagerService.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">relayoutWindow</span><span class="params">(Session session, IWindow client, LayoutParams attrs,</span></span><br><span class="line"><span class="params">            <span class="type">int</span> requestedWidth, <span class="type">int</span> requestedHeight, <span class="type">int</span> viewVisibility, <span class="type">int</span> flags, <span class="type">int</span> seq,</span></span><br><span class="line"><span class="params">            <span class="type">int</span> lastSyncSeqId, WindowRelayoutResult outRelayoutResult)</span> &#123;</span><br><span class="line">   result = createSurfaceControl(outSurfaceControl, result, win, winAnimator);  </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowManagerService.java</span></span><br><span class="line"><span class="keyword">private</span> <span class="type">int</span> <span class="title function_">createSurfaceControl</span><span class="params">(SurfaceControl outSurfaceControl, <span class="type">int</span> result,</span></span><br><span class="line"><span class="params">            WindowState win, WindowStateAnimator winAnimator)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (!win.mHasSurface) &#123;</span><br><span class="line">            result |= RELAYOUT_RES_SURFACE_CHANGED;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        SurfaceControl surfaceControl;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Trace.traceBegin(TRACE_TAG_WINDOW_MANAGER, <span class="string">&quot;createSurfaceControl&quot;</span>);</span><br><span class="line">            surfaceControl = winAnimator.createSurfaceLocked();</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            Trace.traceEnd(TRACE_TAG_WINDOW_MANAGER);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowStateAnimator.java</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">createSurfaceLocked</span><span class="params">()</span> &#123;</span><br><span class="line">   mSurfaceControl = mWin.makeSurface()</span><br><span class="line">                    .setParent(mWin.mSurfaceControl)</span><br><span class="line">                    .setName(mTitle)</span><br><span class="line">                    .setFormat(format)</span><br><span class="line">                    .setFlags(flags)</span><br><span class="line">                    .setMetadata(METADATA_WINDOW_TYPE, attrs.type)</span><br><span class="line">                    .setMetadata(METADATA_OWNER_UID, mSession.mUid)</span><br><span class="line">                    .setMetadata(METADATA_OWNER_PID, mSession.mPid)</span><br><span class="line">                    .setCallsite(<span class="string">&quot;WindowSurfaceController&quot;</span>)</span><br><span class="line">                    .setBLASTLayer().build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="视图通过-Surface-绘制内容"><a href="#视图通过-Surface-绘制内容" class="headerlink" title="视图通过 Surface 绘制内容"></a><strong>视图通过 <code>Surface</code> 绘制内容</strong></h2><p>在 <code>ViewRootImpl</code> 的绘制流程中，通过 <code>Surface</code> 提交帧数据：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ViewRootImpl.java -&gt; performTraversals()</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">performTraversals</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 1. 测量、布局</span></span><br><span class="line">    measureHierarchy(...);</span><br><span class="line">    layout(...);</span><br><span class="line">    <span class="comment">// 2. 绘制到 Surface</span></span><br><span class="line">    performDraw(...)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="type">boolean</span> <span class="title function_">performDraw</span><span class="params">(<span class="meta">@Nullable</span> SurfaceSyncGroup surfaceSyncGroup)</span> &#123;</span><br><span class="line">   usingAsyncReport = draw(fullRedrawNeeded, surfaceSyncGroup, mSyncBuffer);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="type">boolean</span> <span class="title function_">draw</span><span class="params">(<span class="type">boolean</span> fullRedrawNeeded, <span class="meta">@Nullable</span> SurfaceSyncGroup activeSyncGroup,</span></span><br><span class="line"><span class="params">            <span class="type">boolean</span> syncBuffer)</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (!drawSoftware(surface, mAttachInfo, xOffset, yOffset,</span><br><span class="line">                        scalingRequired, dirty, surfaceInsets)) &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">      &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="type">boolean</span> <span class="title function_">drawSoftware</span><span class="params">(Surface surface, AttachInfo attachInfo, <span class="type">int</span> xoff, <span class="type">int</span> yoff,</span></span><br><span class="line"><span class="params">            <span class="type">boolean</span> scalingRequired, Rect dirty, Rect surfaceInsets)</span> &#123;</span><br><span class="line">    <span class="type">Surface</span> <span class="variable">surface</span> <span class="operator">=</span> mSurface;</span><br><span class="line">    <span class="type">Canvas</span> <span class="variable">canvas</span> <span class="operator">=</span> surface.lockCanvas(dirty);</span><br><span class="line">    <span class="comment">// 通过 View 系统绘制内容</span></span><br><span class="line">    mView.draw(canvas);</span><br><span class="line">    surface.unlockCanvasAndPost(canvas);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong><code>surface.lockCanvas()</code></strong> 获取 <code>Canvas</code> 对象，用于绘制。</li>
+<li><strong><code>unlockCanvasAndPost()</code></strong> 提交绘制内容到 <code>Surface</code>，最终由 SurfaceFlinger 合成显示。</li>
+</ul>
+<h2 id="总结流程"><a href="#总结流程" class="headerlink" title="总结流程"></a><strong>总结流程</strong></h2><ol>
+<li><p><strong><code>addView</code> 触发 <code>ViewRootImpl.setView()</code></strong><br>客户端通过 IPC 调用 <code>WMS.addWindow()</code>，创建 <code>WindowState</code>。</p>
+</li>
+<li><p><strong>首次布局请求</strong><br><code>ViewRootImpl.relayoutWindow()</code> 调用 <code>WMS.relayoutWindow()</code>，触发 <code>SurfaceControl</code> 的创建。</p>
+</li>
+<li><p><strong><code>SurfaceControl</code> 的创建</strong><br>服务端通过 <code>SurfaceSession</code> 创建 <code>SurfaceControl</code>，并通过 Binder 将句柄返回客户端。</p>
+</li>
+<li><p><strong>客户端 <code>Surface</code> 绑定</strong><br>客户端 <code>ViewRootImpl</code> 通过 <code>updateBlastSurfaceIfNeeded</code> 将 <code>Surface</code> 与 <code>SurfaceControl</code> 绑定。</p>
+</li>
+<li><p><strong>绘制提交</strong><br>客户端通过 <code>Surface.lockCanvas()</code> 和 <code>unlockCanvasAndPost()</code> 将内容绘制到 <code>Surface</code>，由 SurfaceFlinger 合成显示。</p>
+</li>
+</ol>
+<hr>
+<h2 id="关键绑定关系总结"><a href="#关键绑定关系总结" class="headerlink" title="关键绑定关系总结"></a><strong>关键绑定关系总结</strong></h2><table>
+<thead>
+<tr>
+<th><strong>组件</strong></th>
+<th><strong>作用</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ViewRootImpl</code></td>
+<td>连接视图系统与 WMS，管理 <code>Surface</code> 生命周期和绘制流程。</td>
+</tr>
+<tr>
+<td><code>WindowState</code></td>
+<td>WMS 中的窗口抽象，持有 <code>SurfaceControl</code> 控制 Surface 属性。</td>
+</tr>
+<tr>
+<td><code>SurfaceControl</code></td>
+<td>服务端（WMS）对 <code>Surface</code> 的控制句柄，管理缓冲区分配和属性，对应 SurfaceFlinger 的 Layer。</td>
+</tr>
+<tr>
+<td><code>Surface</code></td>
+<td>客户端（应用进程）的绘制接口，通过 Binder 持有服务端 <code>SurfaceControl</code> 的引用。</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="流程总结"><a href="#流程总结" class="headerlink" title="流程总结"></a><strong>流程总结</strong></h2><ol>
+<li><p><strong>窗口创建</strong><br><code>addView</code> 触发 <code>ViewRootImpl</code> 创建，并通过 IPC 调用 WMS 的 <code>addToDisplayAsUser</code>，在服务端生成 <code>WindowState</code> 和 <code>SurfaceControl</code>。</p>
+</li>
+<li><p><strong>Surface 分配</strong><br>WMS 通过 <code>SurfaceControl</code> 创建 <code>Surface</code>，并将句柄传递给应用进程的 <code>ViewRootImpl</code>。</p>
+</li>
+<li><p><strong>绘制绑定</strong><br><code>ViewRootImpl</code> 通过 <code>relayoutWindow</code> 更新 <code>Surface</code>，在 <code>performTraversals</code> 中完成视图的测量、布局、绘制，最终通过 <code>Surface</code> 提交帧数据。</p>
+</li>
+<li><p><strong>显示合成</strong><br>SurfaceFlinger 根据 <code>Surface</code> 的缓冲区内容，合成到屏幕。</p>
+</li>
+</ol>
+<hr>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%B8%B2%E6%9F%93/" rel="tag"># 渲染</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/02/%E5%BF%AB%E9%80%9F%E5%BC%80%E9%97%AD%E9%97%AA%E5%85%89%E7%81%AF%E5%AE%9E%E7%8E%B0%E4%B8%8E%E9%A3%8E%E9%99%A9%E8%A7%84%E9%81%BF/" rel="prev" title="快速开闭闪光灯实现与风险规避">
+      <i class="fa fa-chevron-left"></i> 快速开闭闪光灯实现与风险规避
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/06/02/rokio%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/" rel="next" title="rokio源码实现简单分析">
+      rokio源码实现简单分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E7%B1%BB%E8%AF%B4%E6%98%8E"><span class="nav-number">2.</span> <span class="nav-text">核心类说明</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B1%BB%E7%BB%93%E6%9E%84%E8%A7%A3%E9%87%8A"><span class="nav-number">2.1.</span> <span class="nav-text">类结构解释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Surface-%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="nav-number">2.2.</span> <span class="nav-text">Surface 的作用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ANativeWindow-%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="nav-number">2.3.</span> <span class="nav-text">ANativeWindow 的作用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%A4%E8%80%85%E5%85%B3%E7%B3%BB"><span class="nav-number">2.4.</span> <span class="nav-text">两者关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.5.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#WMS-addView%E8%87%AA%E7%BB%98%E9%93%BE%E8%B7%AF"><span class="nav-number">3.</span> <span class="nav-text">WMS.addView自绘链路</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#BackPanelController-setLayoutParams"><span class="nav-number">3.1.</span> <span class="nav-text">BackPanelController#setLayoutParams</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WindowManager-addView-%E7%BB%91%E5%AE%9AWindow"><span class="nav-number">3.2.</span> <span class="nav-text">WindowManager.addView 绑定Window</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ViewRootImpl-relayoutWindow-%E7%BB%91%E5%AE%9ASurface"><span class="nav-number">3.3.</span> <span class="nav-text">ViewRootImpl.relayoutWindow 绑定Surface</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%86%E5%9B%BE%E9%80%9A%E8%BF%87-Surface-%E7%BB%98%E5%88%B6%E5%86%85%E5%AE%B9"><span class="nav-number">3.4.</span> <span class="nav-text">视图通过 Surface 绘制内容</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E6%B5%81%E7%A8%8B"><span class="nav-number">3.5.</span> <span class="nav-text">总结流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E7%BB%91%E5%AE%9A%E5%85%B3%E7%B3%BB%E6%80%BB%E7%BB%93"><span class="nav-number">3.6.</span> <span class="nav-text">关键绑定关系总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B%E6%80%BB%E7%BB%93"><span class="nav-number">3.7.</span> <span class="nav-text">流程总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">y.huang</p>
+  <div class="site-description" itemprop="description">一个需要运动的程序员</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">y.huang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

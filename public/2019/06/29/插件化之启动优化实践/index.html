@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="1、引言插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；  微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。针对">
+<meta property="og:type" content="article">
+<meta property="og:title" content="插件化之启动优化实践">
+<meta property="og:url" content="http://example.com/2019/06/29/%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96%E5%AE%9E%E8%B7%B5/index.html">
+<meta property="og:site_name" content="y.huang&#39;s Blog">
+<meta property="og:description" content="1、引言插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：  ART Runtime上首次启动，dex2aot耗时问题；  内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；  微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。针对">
+<meta property="og:locale">
+<meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart2.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/29f3ac36.png">
+<meta property="article:published_time" content="2019-06-29T14:40:33.000Z">
+<meta property="article:modified_time" content="2025-06-02T13:15:33.845Z">
+<meta property="article:author" content="y.huang">
+<meta property="article:tag" content="插件化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart.png">
+
+<link rel="canonical" href="http://example.com/2019/06/29/%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96%E5%AE%9E%E8%B7%B5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>插件化之启动优化实践 | y.huang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">y.huang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Coder</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/06/29/%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96%E5%AE%9E%E8%B7%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="y.huang">
+      <meta itemprop="description" content="一个需要运动的程序员">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="y.huang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          插件化之启动优化实践
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-06-29 22:40:33" itemprop="dateCreated datePublished" datetime="2019-06-29T22:40:33+08:00">2019-06-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-02 21:15:33" itemprop="dateModified" datetime="2025-06-02T21:15:33+08:00">2025-06-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="1、引言"><a href="#1、引言" class="headerlink" title="1、引言"></a>1、引言</h1><p>插件化是一把双刃剑，引入插件化实现后，每个APP都会面临插件框架带来的启动性能问题。性能问题不局限于以下所列项：</p>
+<ol>
+<li>ART Runtime上首次启动，dex2aot耗时问题； </li>
+<li>内致的静态插件和部分SDK，启动时作了大量的初始化操作，表现为Splash页停留5s+以上；</li>
+</ol>
+<p>微店也不例外，在插件化运行初期，微店APP仅静态插件加载时长超5s的每日量达2w+，另个一个店长版APP更不乐观。针对启动时长，我们尝试做了以下优化。</p>
+<span id="more"></span>
+<h1 id="2、启动优化"><a href="#2、启动优化" class="headerlink" title="2、启动优化"></a>2、启动优化</h1><p>优化前，微店APP启动流程可简化成下图所示。APP在Applicaction的attachBaseContext,onCreate以及SplashActivity的onStart，onWindowFocusChanged函数中实现了插件的加载和SDK的初始化。  </p>
+<ol>
+<li>application attachBaseContext阶段：Muitidex处理后，在异步线程，插件框架收集所有静态插件信息（插件文件，插件组件解析）并进行loadDex等操作； </li>
+<li>application onCreate阶段：执行必要的插件以及核心SDK初始化代码,以保证后续功能调用成功，这里的核心SDK包括诸如网络，Crash上报库，埋点库等；  </li>
+<li>activity onStart阶段:这里再细化为主线程和异步线程，执行部分SDK的初始化,比如Fresco；</li>
+<li>activity onWindowFocusChanged阶段:这一阶段执行不太紧急的SDK初始化，比如IM长连接，第三方统计库等。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart.png"></li>
+</ol>
+<p>在这一阶段，已经做到了SDK分层加载，但还是不太理想，主要表现在：</p>
+<ol>
+<li>application attachBaseContext阶段，所有插件都主动加载，并未按需加载或懒加载，比如App里的足迹插件，其实可以做为懒加载插件，在启动足迹页时，进行插件加载； </li>
+<li>application onCreate阶段，大量的SDK初始化，直接加长了启动时长，直接表现为用户看到的splash图其实是window背景，splash页一直在loading中；</li>
+<li>在Splash Activity周期函数中执行了SDK初始化代码，这里在绝大数场景下是没问题。但在自动化测试过程，可能不会先跳splash页，会引起由于SDK没初始化，导致异常表现。</li>
+</ol>
+<p>在收到华为市场启动时长过长警告后（华为要求电商APP启动时长不能超2s），决定优化启动流程。</p>
+<h1 id="3、优化设计"><a href="#3、优化设计" class="headerlink" title="3、优化设计"></a>3、优化设计</h1><p>针对上章节问题，对流程重构，设计了以下流程。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/appstart2.png"><br>插件分为懒加载插件和非懒加载插件，启动时仅对非懒加载插件进行加载，懒加载插件仅做校验等工作。<br>在Application onCreate阶段，不再在主线程执行SDK初始化，在工作线程执行完核心SDK始化后，启动了多个其他工作线程对其余SDK进行操作；<br>在首个Activity onResume中对必须在主线程执行的SDK进行操作；</p>
+<h1 id="4、优化实现"><a href="#4、优化实现" class="headerlink" title="4、优化实现"></a>4、优化实现</h1><p>代码实现其实做了很多工作，非常优秀的团队小伙伴实现了包括ART上首次启动禁用dex2aot优化[1],应用秒开优化[2]。一些核心实现简述如下：</p>
+<ol>
+<li>ART首次启动优化，主要思路hook runtime-&gt;image_dex2oat_enabled_实现动态禁用dex2aot，由于Android版本多，rom包碎片化，这里涉及到大量的适配工作，主要在于runtime的偏移量矫正； </li>
+<li>在启动后，会在工作进程对所有插件进行dex2aot操作[3]；</li>
+<li>APP hook instrumentation, 在第一个Activity实例化时，如果SDK init工作还未完成，先启动一个HookedActivity，等所有工作完成后，再启动业务Splash页。</li>
+</ol>
+<p>如果是拦截启动了hookedActivity，一定要在hookedInstrumentation.callActivityOnCreate方法重置theme为hookActivity自身主题，否则可能会抛出异常，原因我们可以看<a target="_blank" rel="noopener" href="http://androidxref.com/9.0.0_r3/xref/frameworks/base/core/java/android/app/ActivityThread.java#2808">ActiviyThread.performLaunchActivity</a>的实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Activity <span class="title function_">performLaunchActivity</span><span class="params">(ActivityClientRecord r, Intent customIntent)</span> &#123;</span><br><span class="line">.....</span><br><span class="line">      <span class="comment">//r是ActivityRecord,r.activityInfo是从目标activity组件信息里读取的</span></span><br><span class="line">      <span class="type">int</span> <span class="variable">theme</span> <span class="operator">=</span> r.activityInfo.getThemeResource();</span><br><span class="line">      <span class="keyword">if</span> (theme != <span class="number">0</span>) &#123;</span><br><span class="line">                    activity.setTheme(theme);</span><br><span class="line">       &#125;</span><br><span class="line">      activity.mCalled = <span class="literal">false</span>;</span><br><span class="line">      <span class="keyword">if</span> (r.isPersistable()) &#123;</span><br><span class="line">        mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">       mInstrumentation.callActivityOnCreate(activity, r.state);</span><br><span class="line">       &#125;</span><br><span class="line">                </span><br><span class="line">.....                </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>经过一系列的优化后，我们拿到了比较理想的数据。从1w的采样数据我们发现，绝大多数启动在2s以内，有一定的量分布在10s以上。10s以上认定为不太正常的统计数据，通过onWindowFocusChanged方式无法适配Push唤醒,黑屏等场景。下一步的想法是只统计launcher程序启动APP时长，忽略其他唤醒方式，异常数据可能会大量减少。<br><img src="https://raw.githubusercontent.com/emile2013/emile2013.github.io/source/source/imgs/29f3ac36.png"> </p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>[1] art dex2oat 加载加速浅析:<a target="_blank" rel="noopener" href="https://fucknmb.com/2018/12/30/art-dex2oat%E5%8A%A0%E8%BD%BD%E5%8A%A0%E9%80%9F%E6%B5%85%E6%9E%90/">https://fucknmb.com/2018/12/30/art-dex2oat%E5%8A%A0%E8%BD%BD%E5%8A%A0%E9%80%9F%E6%B5%85%E6%9E%90/</a><br>[2] Android端应用秒开优化体验:<a target="_blank" rel="noopener" href="http://zhengxiaoyong.com/2016/07/18/Android%E7%AB%AF%E5%BA%94%E7%94%A8%E7%A7%92%E5%BC%80%E4%BC%98%E5%8C%96%E4%BD%93%E9%AA%8C/">http://zhengxiaoyong.com/2016/07/18/Android%E7%AB%AF%E5%BA%94%E7%94%A8%E7%A7%92%E5%BC%80%E4%BC%98%E5%8C%96%E4%BD%93%E9%AA%8C/</a><br>[3] atlas:<a target="_blank" rel="noopener" href="https://github.com/alibaba/atlas">https://github.com/alibaba/atlas</a>  </p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%8F%92%E4%BB%B6%E5%8C%96/" rel="tag"># 插件化</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/05/23/%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E6%8F%92%E4%BB%B6%E6%B7%B7%E6%B7%86%E7%9A%84%E5%8F%AF%E8%A1%8C%E6%80%A7%E6%8E%A2%E7%B4%A2/" rel="prev" title="插件化之插件混淆的可行性探索">
+      <i class="fa fa-chevron-left"></i> 插件化之插件混淆的可行性探索
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/07/19/%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BAAPT%E5%AE%A2%E6%88%B7%E5%8C%96/" rel="next" title="插件化之AAPT客户化">
+      插件化之AAPT客户化 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1%E3%80%81%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1、引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2%E3%80%81%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96"><span class="nav-number">2.</span> <span class="nav-text">2、启动优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3%E3%80%81%E4%BC%98%E5%8C%96%E8%AE%BE%E8%AE%A1"><span class="nav-number">3.</span> <span class="nav-text">3、优化设计</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4%E3%80%81%E4%BC%98%E5%8C%96%E5%AE%9E%E7%8E%B0"><span class="nav-number">4.</span> <span class="nav-text">4、优化实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">y.huang</p>
+  <div class="site-description" itemprop="description">一个需要运动的程序员</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">y.huang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="引言诸如读写外置存储、读取联系人、发短信等隐私权限，android在6.0系统开始进行动态授权。但在我国，仅向用户提示授权框还不够，工信部在19年11月初发布了专项整治App八类侵权行为审明 ,其文明确治理以下八类问题：  1.私自收集个人信息；2.超范围收集个人信息；3.私自共享给第三方用户信息；4.强制用户使用定向推送功能；5.不给权限不让用；6.频繁申请权限；7.过度索取权限；8.为用户账号">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一种有效管控APP隐私权限的解决方案">
+<meta property="og:url" content="http://example.com/2019/11/16/%E4%B8%80%E7%A7%8D%E6%9C%89%E6%95%88%E7%AE%A1%E6%8E%A7APP%E9%9A%90%E7%A7%81%E6%9D%83%E9%99%90%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/index.html">
+<meta property="og:site_name" content="y.huang&#39;s Blog">
+<meta property="og:description" content="引言诸如读写外置存储、读取联系人、发短信等隐私权限，android在6.0系统开始进行动态授权。但在我国，仅向用户提示授权框还不够，工信部在19年11月初发布了专项整治App八类侵权行为审明 ,其文明确治理以下八类问题：  1.私自收集个人信息；2.超范围收集个人信息；3.私自共享给第三方用户信息；4.强制用户使用定向推送功能；5.不给权限不让用；6.频繁申请权限；7.过度索取权限；8.为用户账号">
+<meta property="og:locale">
+<meta property="article:published_time" content="2019-11-16T09:20:14.000Z">
+<meta property="article:modified_time" content="2025-06-02T13:15:33.845Z">
+<meta property="article:author" content="y.huang">
+<meta property="article:tag" content="小功能组">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2019/11/16/%E4%B8%80%E7%A7%8D%E6%9C%89%E6%95%88%E7%AE%A1%E6%8E%A7APP%E9%9A%90%E7%A7%81%E6%9D%83%E9%99%90%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>一种有效管控APP隐私权限的解决方案 | y.huang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">y.huang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Coder</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/11/16/%E4%B8%80%E7%A7%8D%E6%9C%89%E6%95%88%E7%AE%A1%E6%8E%A7APP%E9%9A%90%E7%A7%81%E6%9D%83%E9%99%90%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="y.huang">
+      <meta itemprop="description" content="一个需要运动的程序员">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="y.huang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          一种有效管控APP隐私权限的解决方案
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-11-16 17:20:14" itemprop="dateCreated datePublished" datetime="2019-11-16T17:20:14+08:00">2019-11-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-02 21:15:33" itemprop="dateModified" datetime="2025-06-02T21:15:33+08:00">2025-06-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>诸如读写外置存储、读取联系人、发短信等隐私权限，android在6.0系统开始进行<a target="_blank" rel="noopener" href="https://developer.android.com/guide/topics/permissions/overview">动态授权</a>。但在我国，仅向用户提示授权框还不够，工信部在19年11月初发布了<a target="_blank" rel="noopener" href="http://www.xinhuanet.com/2019-11/05/c_1125192397.htm">专项整治App八类侵权行为审明</a> ,其文明确治理以下八类问题：</p>
+<blockquote>
+<p>1.私自收集个人信息；<br>2.超范围收集个人信息；<br>3.私自共享给第三方用户信息；<br>4.强制用户使用定向推送功能；<br>5.不给权限不让用；<br>6.频繁申请权限；<br>7.过度索取权限；<br>8.为用户账号注销设置障碍。  </p>
+</blockquote>
+<p>很不幸，网报通告批评：我司老版本APP中审明了隐私权限，但在隐私文档中并未进行有效说明。收到通告，团队立马对权限进行了扫描，发现APP在AndroidManifest中审明了三项隐私权限，但实际过程并未使用(有些冤大头)。我相信很多团队跟我们面临同个问题，多团队开发下，权限引入问题没有一个有效监管机制。为避免类似问题再次发生，本文给出一个简单有效的代码编译层拦截方案。  </p>
+<p>在说方案原理之前，我们先假定检测方案是扫描APP AndroidManifest.xml文件中审明的和用户有关的隐私权限，再比对隐私文档以及实际使用场景，进行判别。面对检测方案，我们给出解决思路：</p>
+<blockquote>
+<p>在编译阶段processApplicationManifest task运行后，对Merged Manifest Log文件进行扫描,如果用到了新权限，抛出打包错误，直至问题解决；</p>
+</blockquote>
+<span id="more"></span>
+<h1 id="源码简阅"><a href="#源码简阅" class="headerlink" title="源码简阅"></a>源码简阅</h1><p>Android Gradle Plugin在编译APP后，会在build&#x2F;outputs&#x2F;logs目录下生成名为【manifest-merger-${variantname}-report.txt】文本文件。<br>以AGP 3.5.0源码为例，简单分析下ProcessApplicationManifest任务是如何产生Merged Manifest Log文件的。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">package com.android.build.gradle.tasks;</span><br><span class="line"></span><br><span class="line">/** A task that processes the manifest */</span><br><span class="line">@CacheableTask</span><br><span class="line">public abstract class ProcessApplicationManifest extends ManifestProcessorTask &#123;</span><br><span class="line">    @Override</span><br><span class="line">    @Internal</span><br><span class="line">    protected boolean getIncremental() &#123;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    protected void doFullTaskAction() throws IOException &#123;</span><br><span class="line">        ... ...</span><br><span class="line">                    MergingReport mergingReport =</span><br><span class="line">                    ManifestHelperKt.mergeManifestsForApplication(</span><br><span class="line">                            getMainManifest(),</span><br><span class="line">                            getManifestOverlays(),</span><br><span class="line">                            computeFullProviderList(compatibleScreenManifestForSplit),</span><br><span class="line">                            navigationXmls,</span><br><span class="line">                            getFeatureName(),</span><br><span class="line">                            moduleMetadata == null</span><br><span class="line">                                    ? getPackageOverride()</span><br><span class="line">                                    : moduleMetadata.getApplicationId(),</span><br><span class="line">                            moduleMetadata == null</span><br><span class="line">                                    ? apkData.getVersionCode()</span><br><span class="line">                                    : Integer.parseInt(moduleMetadata.getVersionCode()),</span><br><span class="line">                            moduleMetadata == null</span><br><span class="line">                                    ? apkData.getVersionName()</span><br><span class="line">                                    : moduleMetadata.getVersionName(),</span><br><span class="line">                            getMinSdkVersion(),</span><br><span class="line">                            getTargetSdkVersion(),</span><br><span class="line">                            getMaxSdkVersion(),</span><br><span class="line">                            manifestOutputFile.getAbsolutePath(),</span><br><span class="line">                            // no aapt friendly merged manifest file necessary for applications.</span><br><span class="line">                            null /* aaptFriendlyManifestOutputFile */,</span><br><span class="line">                            metadataFeatureManifestOutputFile.getAbsolutePath(),</span><br><span class="line">                            bundleManifestOutputFile.getAbsolutePath(),</span><br><span class="line">                            instantAppManifestOutputFile != null</span><br><span class="line">                                    ? instantAppManifestOutputFile.getAbsolutePath()</span><br><span class="line">                                    : null,</span><br><span class="line">                            ManifestMerger2.MergeType.APPLICATION,</span><br><span class="line">                            variantConfiguration.getManifestPlaceholders(),</span><br><span class="line">                            getOptionalFeatures(),</span><br><span class="line">                            getReportFile(),   </span><br><span class="line">                            LoggerWrapper.getLogger(ProcessApplicationManifest.class));</span><br><span class="line">        ... ...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static class CreationAction</span><br><span class="line">            extends AnnotationProcessingTaskCreationAction&lt;ProcessApplicationManifest&gt; &#123;</span><br><span class="line"></span><br><span class="line">        private File reportFile;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void preConfigure(@NonNull String taskName) &#123;</span><br><span class="line">            super.preConfigure(taskName);</span><br><span class="line">            </span><br><span class="line">            //这里就【manifest-merger-$&#123;variantname&#125;-report.txt】文件</span><br><span class="line">            reportFile =</span><br><span class="line">                    FileUtils.join(</span><br><span class="line">                            variantScope.getGlobalScope().getOutputsDir(),</span><br><span class="line">                            &quot;logs&quot;,</span><br><span class="line">                            &quot;manifest-merger-&quot;</span><br><span class="line">                                    + variantScope.getVariantConfiguration().getBaseName()</span><br><span class="line">                                    + &quot;-report.txt&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">     &#125;   </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过代码，可以发现ProcessApplicationManifest是交给ManifestHelperKt.mergeManifestsForApplication方法对所有Manifest进行合并处理的，并且Log保存在【manifest-merger-${variantname}-report.txt】文件中。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line">package com.android.build.gradle.internal.tasks.manifest</span><br><span class="line"></span><br><span class="line">/** Invoke the Manifest Merger version 2.  */</span><br><span class="line">fun mergeManifestsForApplication(</span><br><span class="line">    mainManifest: File,</span><br><span class="line">    manifestOverlays: List&lt;File&gt;,</span><br><span class="line">    dependencies: List&lt;ManifestProvider&gt;,</span><br><span class="line">    navigationFiles: List&lt;File&gt;,</span><br><span class="line">    featureName: String?,</span><br><span class="line">    packageOverride: String?,</span><br><span class="line">    versionCode: Int,</span><br><span class="line">    versionName: String?,</span><br><span class="line">    minSdkVersion: String?,</span><br><span class="line">    targetSdkVersion: String?,</span><br><span class="line">    maxSdkVersion: Int?,</span><br><span class="line">    outManifestLocation: String,</span><br><span class="line">    outAaptSafeManifestLocation: String?,</span><br><span class="line">    outMetadataFeatureManifestLocation: String?,</span><br><span class="line">    outBundleManifestLocation: String?,</span><br><span class="line">    outInstantAppManifestLocation: String?,</span><br><span class="line">    mergeType: ManifestMerger2.MergeType,</span><br><span class="line">    placeHolders: Map&lt;String, Any&gt;,</span><br><span class="line">    optionalFeatures: Collection&lt;ManifestMerger2.Invoker.Feature&gt;,</span><br><span class="line">    reportFile: File?,</span><br><span class="line">    logger: ILogger</span><br><span class="line">): MergingReport &#123;</span><br><span class="line"></span><br><span class="line">    try &#123;</span><br><span class="line"></span><br><span class="line">        //ManifestMerger2是 manifest-merger库提供的辅助类</span><br><span class="line">        val manifestMergerInvoker = ManifestMerger2.newMerger(mainManifest, logger, mergeType)</span><br><span class="line">            .setPlaceHolderValues(placeHolders)</span><br><span class="line">            .addFlavorAndBuildTypeManifests(*manifestOverlays.toTypedArray())</span><br><span class="line">            .addManifestProviders(dependencies)</span><br><span class="line">            .addNavigationFiles(navigationFiles)</span><br><span class="line">            .withFeatures(*optionalFeatures.toTypedArray())</span><br><span class="line">            .setMergeReportFile(reportFile)</span><br><span class="line">            .setFeatureName(featureName)</span><br><span class="line"></span><br><span class="line">        if (mergeType == ManifestMerger2.MergeType.APPLICATION) &#123;</span><br><span class="line">            manifestMergerInvoker.withFeatures(ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        if (outAaptSafeManifestLocation != null) &#123;</span><br><span class="line">            manifestMergerInvoker.withFeatures(ManifestMerger2.Invoker.Feature.MAKE_AAPT_SAFE)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        setInjectableValues(</span><br><span class="line">            manifestMergerInvoker,</span><br><span class="line">            packageOverride, versionCode, versionName,</span><br><span class="line">            minSdkVersion, targetSdkVersion, maxSdkVersion</span><br><span class="line">        )</span><br><span class="line">        </span><br><span class="line">        //关注这里的调用</span><br><span class="line">        val mergingReport = manifestMergerInvoker.merge()</span><br><span class="line">        //省略其他对merge结果处理代码</span><br><span class="line">        ... ...</span><br><span class="line">        return mergingReport</span><br><span class="line">    &#125; catch (e: ManifestMerger2.MergeFailureException) &#123;</span><br><span class="line">        // TODO: unacceptable.</span><br><span class="line">        throw RuntimeException(e)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接着看manifestMergerInvoker.merge()的实现</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line">package com.android.manifmerger;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * merges android manifest files, idempotent.</span><br><span class="line"> */</span><br><span class="line">@Immutable</span><br><span class="line">public class ManifestMerger2 &#123;</span><br><span class="line">    public static class Invoker&lt;T extends Invoker&lt;T&gt;&gt;&#123;</span><br><span class="line"></span><br><span class="line">        @NonNull</span><br><span class="line">        public MergingReport merge() throws MergeFailureException &#123;</span><br><span class="line"></span><br><span class="line">            // provide some free placeholders values.</span><br><span class="line">            ImmutableMap&lt;ManifestSystemProperty, Object&gt; systemProperties = mSystemProperties.build();</span><br><span class="line">            ... ...</span><br><span class="line">            FileStreamProvider fileStreamProvider = mFileStreamProvider != null</span><br><span class="line">                    ? mFileStreamProvider : new FileStreamProvider();</span><br><span class="line">            ManifestMerger2 manifestMerger =</span><br><span class="line">                    new ManifestMerger2(</span><br><span class="line">                            mLogger,</span><br><span class="line">                            mMainManifestFile,</span><br><span class="line">                            mLibraryFilesBuilder.build(),</span><br><span class="line">                            mFlavorsAndBuildTypeFiles.build(),</span><br><span class="line">                            mFeaturesBuilder.build(),</span><br><span class="line">                            mPlaceholders.build(),</span><br><span class="line">                            new MapBasedKeyBasedValueResolver&lt;ManifestSystemProperty&gt;(</span><br><span class="line">                                    systemProperties),</span><br><span class="line">                            mMergeType,</span><br><span class="line">                            mDocumentType,</span><br><span class="line">                            Optional.fromNullable(mReportFile),</span><br><span class="line">                            mFeatureName,</span><br><span class="line">                            fileStreamProvider,</span><br><span class="line">                            mNavigationFilesBuilder.build());</span><br><span class="line">            //调用下面的 private MergingReport merge()方法               </span><br><span class="line">            return manifestMerger.merge();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Perform high level ordering of files merging and delegates actual merging to</span><br><span class="line">     * &#123;@link XmlDocument#merge(XmlDocument, com.android.manifmerger.MergingReport.Builder)&#125;</span><br><span class="line">     *</span><br><span class="line">     * @return the merging activity report.</span><br><span class="line">     * @throws MergeFailureException if the merging cannot be completed (for instance, if xml</span><br><span class="line">     * files cannot be loaded).</span><br><span class="line">     */</span><br><span class="line">    @NonNull</span><br><span class="line">    private MergingReport merge() throws MergeFailureException &#123;</span><br><span class="line">        // initiate a new merging report</span><br><span class="line">        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);</span><br><span class="line">        //一系列merge manifest规则处理</span><br><span class="line">        ... ...</span><br><span class="line">        MergingReport mergingReport = mergingReportBuilder.build();</span><br><span class="line"></span><br><span class="line">        if (mReportFile.isPresent()) &#123;</span><br><span class="line">            writeReport(mergingReport);</span><br><span class="line">        &#125;</span><br><span class="line">        return mergingReport;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    //最终写入Log文件方法</span><br><span class="line">    /**</span><br><span class="line">     * Creates the merging report file.</span><br><span class="line">     * @param mergingReport the merging activities report to serialize.</span><br><span class="line">     */</span><br><span class="line">    private void writeReport(@NonNull MergingReport mergingReport) &#123;</span><br><span class="line">        FileWriter fileWriter = null;</span><br><span class="line">                ... ... </span><br><span class="line">                fileWriter = new FileWriter(mReportFile.get());</span><br><span class="line">                mergingReport.getActions().log(fileWriter);</span><br><span class="line">    &#125; </span><br><span class="line">&#125;        </span><br></pre></td></tr></table></figure>
+
+<p>到目前为止,从代码层面看到了Log文件是如何生成的。</p>
+<h1 id="方案实现"><a href="#方案实现" class="headerlink" title="方案实现"></a>方案实现</h1><p>【manifest-merger-${variantname}-report.txt】文件大致内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">-- Merging decision tree log ---</span><br><span class="line">manifest</span><br><span class="line">ADDED from /somepath/AndroidManifest.xml:x:x-xx:xx</span><br><span class="line">MERGED from [dependencies sdk] /somepath/AndroidManifest.xml:x:x-xx:xx</span><br><span class="line">INJECTED from /somepath/AndroidManifest.xml:x:x-xx:xx</span><br><span class="line">...</span><br><span class="line">uses-permission#android.permission.INTERNET</span><br></pre></td></tr></table></figure>
+
+<p>方案代码实现很简单：</p>
+<blockquote>
+<p>1.自定义一个Extension，列出暂禁用的权限；<br>2.实现相应Plugin和Task；</p>
+</blockquote>
+<p>Extension定义可以如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">host&#123;</span><br><span class="line">       //明确暂禁用的权限列表</span><br><span class="line">       forbiddenPermissions = [&#x27;android.permission.GET_ACCOUNTS&#x27;,</span><br><span class="line">                            &#x27;android.permission.SEND_SMS&#x27;,</span><br><span class="line">                            &#x27;android.permission.CALL_PHONE&#x27;,</span><br><span class="line">                            &#x27;android.permission.BLUETOOTH&#x27;,</span><br><span class="line">                             ... ...] </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Plugin简单示例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">public  class HostPlugin implements Plugin&lt;Project&gt; &#123;</span><br><span class="line">    @Override</span><br><span class="line">    final void apply(Project project) &#123;</span><br><span class="line">        if (!project.getPlugins().hasPlugin(&#x27;com.android.application&#x27;) &amp;&amp; !project.getPlugins().hasPlugin(&#x27;com.android.library&#x27;)) &#123;</span><br><span class="line">            throw new GradleException(&#x27;apply plugin: \&#x27;com.android.application\&#x27; or apply plugin: \&#x27;com.android.library\&#x27; is required&#x27;)</span><br><span class="line">        &#125;</span><br><span class="line">        HostExtension hostExtension = project.getExtensions().create(&#x27;host&#x27;, HostExtension.class)</span><br><span class="line">        </span><br><span class="line">        project.afterEvaluate &#123;</span><br><span class="line">            def variants = null;</span><br><span class="line">            if (project.plugins.hasPlugin(&#x27;com.android.application&#x27;)) &#123;</span><br><span class="line">                variants = android.getApplicationVariants()</span><br><span class="line">            &#125; else if (project.plugins.hasPlugin(&#x27;com.android.library&#x27;)) &#123;</span><br><span class="line">                variants = android.getLibraryVariants()</span><br><span class="line">            &#125;</span><br><span class="line">            variants?.all &#123; BaseVariant variant -&gt;</span><br><span class="line">               MergeHostManifestTask taskConfiguration=  new MergeHostManifestTask.CreationAction()</span><br><span class="line">               project.getTasks().create(taskConfiguration.getName(), taskConfiguration.getType(), taskConfiguration)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;   </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Task简单示例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line">import org.gradle.util.GFileUtils</span><br><span class="line">import com.android.utils.FileUtils</span><br><span class="line"></span><br><span class="line">class MergeHostManifestTask extends DefaultTask &#123;</span><br><span class="line"></span><br><span class="line">    List&lt;String&gt; forbiddenPermissions //禁用的权限列表</span><br><span class="line"></span><br><span class="line">    VariantScope scope</span><br><span class="line"></span><br><span class="line">    @TaskAction</span><br><span class="line">    def doFullTaskAction() &#123;</span><br><span class="line"></span><br><span class="line">        File logFile = FileUtils.join(</span><br><span class="line">                scope.getGlobalScope().getOutputsDir(),</span><br><span class="line">                &quot;logs&quot;,</span><br><span class="line">                &quot;manifest-permissions-validate-&quot;</span><br><span class="line">                        + scope.getVariantConfiguration().getBaseName()</span><br><span class="line">                        + &quot;-report.txt&quot;)</span><br><span class="line">        GFileUtils.mkdirs(logFile.getParentFile())</span><br><span class="line">        GFileUtils.deleteQuietly(logFile)  </span><br><span class="line"></span><br><span class="line">        checkHostManifest(forbiddenPermissions,logFile,scope)</span><br><span class="line">        if (logFile.exists() &amp;&amp; logFile.length() &gt; 0) &#123;</span><br><span class="line">            throw new GradleException(&quot;Has forbidden permissions in host, please check it in file $&#123;logFile.getAbsolutePath()&#125;&quot;)</span><br><span class="line">        &#125;              </span><br><span class="line">    &#125;    </span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 检测host manifest 是否含有禁用权限列表</span><br><span class="line">     * @param forbiddenPermissions</span><br><span class="line">     * @param logFile</span><br><span class="line">     * @param variantScope</span><br><span class="line">     */</span><br><span class="line">    public static void checkHostManifest(List&lt;String&gt; forbiddenPermissions, File logFile, def variantScope) &#123;</span><br><span class="line">        if (forbiddenPermissions == null || forbiddenPermissions.isEmpty()) &#123;</span><br><span class="line">            return</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        File reportFile =</span><br><span class="line">                FileUtils.join(</span><br><span class="line">                        variantScope.getGlobalScope().getOutputsDir(),</span><br><span class="line">                        &quot;logs&quot;,</span><br><span class="line">                        &quot;manifest-merger-&quot;</span><br><span class="line">                                + variantScope.getVariantConfiguration().getBaseName()</span><br><span class="line">                                + &quot;-report.txt&quot;)</span><br><span class="line"></span><br><span class="line">        if (!reportFile.exists()) &#123;</span><br><span class="line">            return</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        reportFile.withReader &#123; reader -&gt;</span><br><span class="line">            String line</span><br><span class="line">            while ((line = reader.readLine()) != null) &#123;</span><br><span class="line">                forbiddenPermissions.each &#123; p -&gt;</span><br><span class="line">                    if (line.contains(&quot;uses-permission#$&#123;p.trim()&#125;&quot;)) &#123;</span><br><span class="line">                        logFile.append(&quot;$&#123;p.trim()&#125;\n&quot;)</span><br><span class="line">                        logFile.append(reader.readLine())</span><br><span class="line">                        logFile.append(&quot;\n&quot;)</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static class CreationAction</span><br><span class="line">            extends TaskConfiguration&lt;MergeHostManifestTask&gt; &#123;</span><br><span class="line"></span><br><span class="line">        BaseVariant variant</span><br><span class="line"></span><br><span class="line">        Project project</span><br><span class="line"></span><br><span class="line">        public CreationAction(Project project,BaseVariant variant)&#123;</span><br><span class="line">            this.project= project</span><br><span class="line">            this.variant=variant</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        void execute(MergeHostManifestTask task) &#123;</span><br><span class="line">            ... ...</span><br><span class="line">            HostExtension hostExtension = project.getExtensions().findByType(HostExtension.class)</span><br><span class="line">            task.forbiddenPermissions = hostExtension.getForbiddenPermissions()</span><br><span class="line">            task.scope= variant.getMetaClass().getProperty(variant, &#x27;variantData&#x27;).getScope()</span><br><span class="line">            task.dependsOn getProcessManifestTask()</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">       private Task getProcessManifestTaskCompat() &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            //&gt;=3.3.0</span><br><span class="line">            String taskName = variant.getMetaClass().getProperty(variant, &#x27;variantData&#x27;).getScope().getTaskContainer().getProcessManifestTask().getName()</span><br><span class="line">            return project.getTasks().findByName(taskName)</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;    </span><br></pre></td></tr></table></figure>
+
+<p>如果APP或其依赖的SDK,有引入禁用权限，则会抛出编译异常，生成的【manifest-permissions-validate-${variantname}-report.txt】文件内容类似以下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">android.permission.SEND_SMS</span><br><span class="line">ADDED from /../app/src/main/AndroidManifest.xml:9:5-67</span><br><span class="line">android.permission.BLUETOOTH</span><br><span class="line">ADDED from /../app/src/main/AndroidManifest.xml:11:5-68</span><br></pre></td></tr></table></figure>
+
+<h1 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h1><p>关于隐私权限列表，相关部门也未给允一个完整的列表，建议团队把所有未在隐私文档中描述的动态权限都作为禁用权限，直至隐私文档同步。</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>1.Android Gradle Plugin：<a target="_blank" rel="noopener" href="https://android.googlesource.com/platform/tools/base/+/studio-master-dev/build-system/gradle-core">https://android.googlesource.com/platform/tools/base/+/studio-master-dev/build-system/gradle-core</a>  </p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%B0%8F%E5%8A%9F%E8%83%BD%E7%BB%84/" rel="tag"># 小功能组</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/10/17/%E5%B0%8F%E5%8A%9F%E8%83%BD%E4%B9%8B%E5%9B%9E%E9%80%80%E9%A6%96%E9%A1%B5%E5%8F%AF%E8%A1%8C%E6%80%A7%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E6%8E%A2%E7%B4%A2/" rel="prev" title="小功能之回退首页可行性解决方案探索">
+      <i class="fa fa-chevron-left"></i> 小功能之回退首页可行性解决方案探索
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/12/12/%E4%BB%8B%E7%BB%8D%E4%B8%A4%E6%AC%BEandroidX%E8%BF%81%E7%A7%BB%E5%88%A9%E5%99%A8/" rel="next" title="介绍两款androidX迁移利器">
+      介绍两款androidX迁移利器 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E7%AE%80%E9%98%85"><span class="nav-number">2.</span> <span class="nav-text">源码简阅</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%96%B9%E6%A1%88%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">方案实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BB%93%E6%9D%9F%E8%AF%AD"><span class="nav-number">4.</span> <span class="nav-text">结束语</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">y.huang</p>
+  <div class="site-description" itemprop="description">一个需要运动的程序员</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">y.huang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
