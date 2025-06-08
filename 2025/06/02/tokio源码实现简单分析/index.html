@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="前言Tokio 是一个 Rust 的异步运行时，它提供了一个完整的异步 I&#x2F;O 框架。其实现在AI Code分析工具，比如Cursor、windsurf等基本都能分析出tokio核心实现，本文并不做八股文总结，仅尝试从任务调度实现角度分析，给出我们可以借鉴的设计思想，其中包括：  工作窃取实现 任务调度优化 阻塞任务实现  先来看tokio简单示例：  创建运行时  1234let rt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="tokio源码实现简单分析">
+<meta property="og:url" content="http://example.com/2025/06/02/tokio%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="y.huang&#39;s Blog">
+<meta property="og:description" content="前言Tokio 是一个 Rust 的异步运行时，它提供了一个完整的异步 I&#x2F;O 框架。其实现在AI Code分析工具，比如Cursor、windsurf等基本都能分析出tokio核心实现，本文并不做八股文总结，仅尝试从任务调度实现角度分析，给出我们可以借鉴的设计思想，其中包括：  工作窃取实现 任务调度优化 阻塞任务实现  先来看tokio简单示例：  创建运行时  1234let rt">
+<meta property="og:locale">
+<meta property="og:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/tokio_classes.png?raw=true">
+<meta property="article:published_time" content="2025-06-02T08:41:48.000Z">
+<meta property="article:modified_time" content="2025-06-08T13:14:33.018Z">
+<meta property="article:author" content="y.huang">
+<meta property="article:tag" content="rust">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/tokio_classes.png?raw=true">
+
+<link rel="canonical" href="http://example.com/2025/06/02/tokio%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>tokio源码实现简单分析 | y.huang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">y.huang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Coder</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/06/02/tokio%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="y.huang">
+      <meta itemprop="description" content="一个需要运动的程序员">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="y.huang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          tokio源码实现简单分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-06-02 16:41:48" itemprop="dateCreated datePublished" datetime="2025-06-02T16:41:48+08:00">2025-06-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-08 21:14:33" itemprop="dateModified" datetime="2025-06-08T21:14:33+08:00">2025-06-08</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/tokio_classes.png?raw=true"><br>Tokio 是一个 Rust 的异步运行时，它提供了一个完整的异步 I&#x2F;O 框架。其实现在AI Code分析工具，比如Cursor、windsurf等基本都能分析出tokio核心实现，本文并不做八股文总结，仅尝试从任务调度实现角度分析，给出我们可以借鉴的设计思想，其中包括：</p>
+<ul>
+<li>工作窃取实现</li>
+<li>任务调度优化</li>
+<li>阻塞任务实现</li>
+</ul>
+<p>先来看tokio简单示例：</p>
+<ul>
+<li>创建运行时</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="variable">rt</span> = Runtime::<span class="title function_ invoke__">builder</span>()</span><br><span class="line">    .<span class="title function_ invoke__">worker_threads</span>(<span class="number">4</span>)</span><br><span class="line">    .<span class="title function_ invoke__">build</span>()</span><br><span class="line">    .<span class="title function_ invoke__">unwrap</span>();</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>提交任务</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">rt.<span class="title function_ invoke__">spawn</span>(<span class="keyword">async</span> &#123;</span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;Running on worker thread&quot;</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>提交阻塞任务</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">rt.<span class="title function_ invoke__">spawn_blocking</span>(|| &#123;</span><br><span class="line">    <span class="comment">// 执行阻塞操作</span></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h2 id="整体架构"><a href="#整体架构" class="headerlink" title="整体架构"></a>整体架构</h2><p>作为异步 I&#x2F;O 框架，其核心架构包含以下几个主要组件：</p>
+<h3 id="核心组件"><a href="#核心组件" class="headerlink" title="核心组件"></a>核心组件</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// src/runtime/runtime.rs</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Runtime</span> &#123;</span><br><span class="line">    <span class="comment">/// 调度器</span></span><br><span class="line">    scheduler: Scheduler,</span><br><span class="line">    <span class="comment">/// 运行时句柄</span></span><br><span class="line">    handle: Handle,</span><br><span class="line">    <span class="comment">/// 阻塞线程池</span></span><br><span class="line">    blocking_pool: BlockingPool,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="调度器类型"><a href="#调度器类型" class="headerlink" title="调度器类型"></a>调度器类型</h3><p>调度器</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// src/runtime/runtime.rs</span></span><br><span class="line"><span class="title function_ invoke__">pub</span>(<span class="keyword">super</span>) <span class="keyword">enum</span> <span class="title class_">Scheduler</span> &#123;</span><br><span class="line">    <span class="comment">/// 单线程调度器</span></span><br><span class="line">    <span class="title function_ invoke__">CurrentThread</span>(CurrentThread),</span><br><span class="line">    <span class="comment">/// 多线程调度器</span></span><br><span class="line">    <span class="title function_ invoke__">MultiThread</span>(MultiThread),</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>调度器句柄, 支持单线程与多线程模式。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// src/runtime/scheduler/current_thread/mod.rs</span></span><br><span class="line"><span class="comment">/// Handle to the current thread scheduler</span></span><br><span class="line"><span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) <span class="keyword">struct</span> <span class="title class_">Handle</span> &#123;</span><br><span class="line">    <span class="comment">/// Scheduler state shared across threads</span></span><br><span class="line">    shared: Shared,</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Resource driver handles</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) driver: driver::Handle,</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Blocking pool spawner</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) blocking_spawner: blocking::Spawner,</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Current random number generator seed</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) seed_generator: RngSeedGenerator,</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// User-supplied hooks to invoke for things</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) task_hooks: TaskHooks,</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// If this is a `LocalRuntime`, flags the owning thread ID.</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) local_tid: <span class="type">Option</span>&lt;ThreadId&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// src/runtime/scheduler/multi_thread/handle.rs</span></span><br><span class="line"><span class="comment">/// Handle to the multi thread scheduler</span></span><br><span class="line"><span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) <span class="keyword">struct</span> <span class="title class_">Handle</span> &#123;</span><br><span class="line">    <span class="comment">/// Task spawner</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">super</span>) shared: worker::Shared,</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Resource driver handles</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) driver: driver::Handle,</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Blocking pool spawner</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) blocking_spawner: blocking::Spawner,</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Current random number generator seed</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) seed_generator: RngSeedGenerator,</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// User-supplied hooks to invoke for things</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) task_hooks: TaskHooks,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Worker"><a href="#Worker" class="headerlink" title="Worker"></a>Worker</h3><p>每一个Worker对应一个线程，其实也可以称Worker线程。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// src/runtime/scheduler/multi_thread/worker.rs</span></span><br><span class="line"><span class="title function_ invoke__">pub</span>(<span class="keyword">super</span>) <span class="keyword">struct</span> <span class="title class_">Worker</span> &#123;</span><br><span class="line">    <span class="comment">/// 调度器句柄</span></span><br><span class="line">    handle: Arc&lt;Handle&gt;,</span><br><span class="line">    <span class="comment">/// Worker 索引</span></span><br><span class="line">    index: <span class="type">usize</span>,</span><br><span class="line">    <span class="comment">/// 核心数据结构</span></span><br><span class="line">    core: AtomicCell&lt;Core&gt;,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// src/runtime/scheduler/multi_thread/worker.rs</span></span><br><span class="line"><span class="title function_ invoke__">pub</span>(<span class="keyword">super</span>) <span class="keyword">struct</span> <span class="title class_">Core</span> &#123;</span><br><span class="line">    <span class="comment">/// 本地任务队列</span></span><br><span class="line">    run_queue: queue::Local,</span><br><span class="line">    <span class="comment">/// LIFO 槽位</span></span><br><span class="line">    lifo_slot: <span class="type">Option</span>&lt;Notified&gt;,</span><br><span class="line">    <span class="comment">/// 是否正在搜索任务</span></span><br><span class="line">    is_searching: <span class="type">bool</span>,</span><br><span class="line">    <span class="comment">/// 是否已关闭</span></span><br><span class="line">    is_shutdown: <span class="type">bool</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="任务队列"><a href="#任务队列" class="headerlink" title="任务队列"></a>任务队列</h3><p>这里我们更多指全局Inject队列，worker自身Local队列在core对象中管理。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// src/runtime/scheduler/multi_thread/worker.rs</span></span><br><span class="line"><span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) <span class="keyword">struct</span> <span class="title class_">Shared</span> &#123;</span><br><span class="line">    <span class="comment">/// 全局任务队列</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">super</span>) inject: inject::Shared,</span><br><span class="line">    <span class="comment">/// 远程 Worker 列表</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">super</span>) remotes: <span class="type">Box</span>&lt;[Remote]&gt;,</span><br><span class="line">    <span class="comment">/// 空闲 Worker 管理</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">super</span>) idle: Idle,</span><br><span class="line">    <span class="comment">/// 调度器配置</span></span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">super</span>) config: Config,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Worker窃取算法"><a href="#Worker窃取算法" class="headerlink" title="Worker窃取算法"></a>Worker窃取算法</h2><p>在分析窃取前，我们先简单总结下tokio全局Inject队列与Worker本地队列的关系：</p>
+<ul>
+<li>Inject 队列：一个全局的队列，用于接收新任务和作为本地队列溢出时的缓冲区</li>
+<li>Worker Local 队列：每个 worker 线程都有一个固定大小的本地队列，用于存储待执行的任务</li>
+<li>（schedule_task）新任务提交时，如果当前线程是 worker 线程，则将任务放入当前 worker 的本地队列，否则放入全局 inject 队列</li>
+<li>（push_overflow）当本地队列满时，将一半的任务移到 inject 队列</li>
+</ul>
+<p>tokio的工作窃取其实策略很简单，优先随机从其他worker（线程）的队列中，取一半还未运行的任务，窃取至本worker运行，如果其他worker也没有，那从全局inject队列取任务，不过窃取也有限制：</p>
+<ul>
+<li>LOCAL_QUEUE_CAPACITY 是队列的总容量（默认是 256）</li>
+<li>如果本队列已使用的空间超过总容量的一半（128），就不进行窃取，这应该是确保本队列有足够的空间来接收窃取的任务</li>
+</ul>
+<h3 id="任务调度流程"><a href="#任务调度流程" class="headerlink" title="任务调度流程"></a>任务调度流程</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// src/runtime/scheduler/multi_thread/worker.rs#Context.run</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">run</span>(&amp;<span class="keyword">self</span>, <span class="keyword">mut</span> core: <span class="type">Box</span>&lt;Core&gt;) <span class="punctuation">-&gt;</span> RunResult &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> !core.is_shutdown &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 首先检查当前工作线程是否有可用任务</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(task) = core.<span class="title function_ invoke__">next_task</span>(&amp;<span class="keyword">self</span>.worker) &#123;</span><br><span class="line">                core = <span class="keyword">self</span>.<span class="title function_ invoke__">run_task</span>(task, core)?;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">             <span class="comment">// 如果没有本地任务，尝试从其他工作线程窃取任务</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(task) = core.<span class="title function_ invoke__">steal_work</span>(&amp;<span class="keyword">self</span>.worker) &#123;</span><br><span class="line">                <span class="comment">// Found work, switch back to processing</span></span><br><span class="line">                core.stats.<span class="title function_ invoke__">start_processing_scheduled_tasks</span>();</span><br><span class="line">                core = <span class="keyword">self</span>.<span class="title function_ invoke__">run_task</span>(task, core)?;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// 如果没有任务可执行，进入等待状态</span></span><br><span class="line">                core = <span class="keyword">if</span> !<span class="keyword">self</span>.defer.<span class="title function_ invoke__">is_empty</span>() &#123;</span><br><span class="line">                    <span class="keyword">self</span>.<span class="title function_ invoke__">park_timeout</span>(core, <span class="title function_ invoke__">Some</span>(Duration::<span class="title function_ invoke__">from_millis</span>(<span class="number">0</span>)))</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">self</span>.<span class="title function_ invoke__">park</span>(core)</span><br><span class="line">                &#125;;</span><br><span class="line">                core.stats.<span class="title function_ invoke__">start_processing_scheduled_tasks</span>();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="工作窃取实现"><a href="#工作窃取实现" class="headerlink" title="工作窃取实现"></a>工作窃取实现</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// src/runtime/scheduler/multi_thread/worker.rs#Core#steal_work</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">steal_work</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, worker: &amp;Worker) <span class="punctuation">-&gt;</span> <span class="type">Option</span>&lt;Notified&gt; &#123;</span><br><span class="line">    <span class="comment">// 1. 首先尝试将工作线程状态转换为&quot;搜索&quot;状态</span></span><br><span class="line">    <span class="keyword">if</span> !<span class="keyword">self</span>.<span class="title function_ invoke__">transition_to_searching</span>(worker) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 获取远程工作线程的数量</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">num</span> = worker.handle.shared.remotes.<span class="title function_ invoke__">len</span>();</span><br><span class="line">    <span class="comment">// 3. 随机选择一个起始工作线程</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">start</span> = <span class="keyword">self</span>.rand.<span class="title function_ invoke__">fastrand_n</span>(num <span class="keyword">as</span> <span class="type">u32</span>) <span class="keyword">as</span> <span class="type">usize</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 4. 遍历所有工作线程尝试窃取任务</span></span><br><span class="line">    <span class="keyword">for</span> <span class="variable">i</span> <span class="keyword">in</span> <span class="number">0</span>..num &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">i</span> = (start + i) % num;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 5. 跳过自己，因为知道自己没有任务</span></span><br><span class="line">        <span class="keyword">if</span> i == worker.index &#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 6. 尝试从目标工作线程窃取任务</span></span><br><span class="line">        <span class="keyword">let</span> <span class="variable">target</span> = &amp;worker.handle.shared.remotes[i];</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(task) = target</span><br><span class="line">            .steal</span><br><span class="line">            .<span class="title function_ invoke__">steal_into</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>.run_queue, &amp;<span class="keyword">mut</span> <span class="keyword">self</span>.stats)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="title function_ invoke__">Some</span>(task);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 7. 如果从其他工作线程没有窃取到任务，检查全局队列</span></span><br><span class="line">    worker.handle.<span class="title function_ invoke__">next_remote_task</span>()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"> <span class="comment">/// src/runtime/scheduler/multi_thread/queue.rs#Steal#steal_into</span></span><br><span class="line"> <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) <span class="keyword">fn</span> <span class="title function_">steal_into</span>(</span><br><span class="line">    &amp;<span class="keyword">self</span>,</span><br><span class="line">    dst: &amp;<span class="keyword">mut</span> Local&lt;T&gt;,</span><br><span class="line">    dst_stats: &amp;<span class="keyword">mut</span> Stats,</span><br><span class="line"> ) <span class="punctuation">-&gt;</span> <span class="type">Option</span>&lt;task::Notified&lt;T&gt;&gt; &#123;</span><br><span class="line">    <span class="comment">// 1. 获取目标队列的尾部位置</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">dst_tail</span> = <span class="keyword">unsafe</span> &#123; dst.inner.tail.<span class="title function_ invoke__">unsync_load</span>() &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 检查目标队列是否有足够空间</span></span><br><span class="line">    <span class="keyword">let</span> (steal, _) = <span class="title function_ invoke__">unpack</span>(dst.inner.head.<span class="title function_ invoke__">load</span>(Acquire));</span><br><span class="line">    <span class="keyword">if</span> dst_tail.<span class="title function_ invoke__">wrapping_sub</span>(steal) &gt; LOCAL_QUEUE_CAPACITY <span class="keyword">as</span> UnsignedShort / <span class="number">2</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 3. 尝试窃取任务到目标队列</span></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">n</span> = <span class="keyword">self</span>.<span class="title function_ invoke__">steal_into2</span>(dst, dst_tail);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 4. 更新统计信息</span></span><br><span class="line">    dst_stats.<span class="title function_ invoke__">incr_steal_count</span>(n <span class="keyword">as</span> <span class="type">u16</span>);</span><br><span class="line">    dst_stats.<span class="title function_ invoke__">incr_steal_operations</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5. 准备返回一个任务</span></span><br><span class="line">    n -= <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">ret_pos</span> = dst_tail.<span class="title function_ invoke__">wrapping_add</span>(n);</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">ret_idx</span> = ret_pos <span class="keyword">as</span> <span class="type">usize</span> &amp; MASK;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 6. 获取要返回的任务</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">ret</span> = dst.inner.buffer[ret_idx].<span class="title function_ invoke__">with</span>(|ptr| <span class="keyword">unsafe</span> &#123; ptr::<span class="title function_ invoke__">read</span>((*ptr).<span class="title function_ invoke__">as_ptr</span>()) &#125;);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="title function_ invoke__">Some</span>(ret);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 7. 更新目标队列的尾部位置，使窃取的任务对消费者可见</span></span><br><span class="line">    dst.inner.tail.<span class="title function_ invoke__">store</span>(dst_tail.<span class="title function_ invoke__">wrapping_add</span>(n), Release);</span><br><span class="line"></span><br><span class="line">    <span class="title function_ invoke__">Some</span>(ret)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">steal_into2</span>(&amp;<span class="keyword">self</span>, dst: &amp;<span class="keyword">mut</span> Local&lt;T&gt;, dst_tail: UnsignedShort) <span class="punctuation">-&gt;</span> UnsignedShort &#123;</span><br><span class="line">            <span class="comment">// 计算可窃取的任务数量</span></span><br><span class="line">            <span class="keyword">let</span> <span class="variable">n</span> = src_tail.<span class="title function_ invoke__">wrapping_sub</span>(src_head_real);</span><br><span class="line">            <span class="comment">// 计算可窃取的任务数量</span></span><br><span class="line">            <span class="keyword">let</span> <span class="variable">n</span> = n - n / <span class="number">2</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"> <span class="comment">/// src/runtime/scheduler/multi_thread/queue.rs#Handle#next_remote_task</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">next_remote_task</span>(&amp;<span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Option</span>&lt;Notified&gt; &#123;</span><br><span class="line">    <span class="comment">// 1. 首先检查注入队列是否为空</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">self</span>.shared.inject.<span class="title function_ invoke__">is_empty</span>() &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 获取同步锁</span></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">synced</span> = <span class="keyword">self</span>.shared.synced.<span class="title function_ invoke__">lock</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 3. 从注入队列中弹出一个任务</span></span><br><span class="line">    <span class="keyword">unsafe</span> &#123; <span class="keyword">self</span>.shared.inject.<span class="title function_ invoke__">pop</span>(&amp;<span class="keyword">mut</span> synced.inject) &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="任务调度优化"><a href="#任务调度优化" class="headerlink" title="任务调度优化"></a>任务调度优化</h2><p>任务调度比较简单就是一LIFO算法调用。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> <span class="title class_">Core</span> &#123;</span><br><span class="line">    <span class="comment">// 使用 LIFO 槽位优化最近提交的任务</span></span><br><span class="line">    lifo_slot: <span class="type">Option</span>&lt;Notified&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="阻塞任务处理"><a href="#阻塞任务处理" class="headerlink" title="阻塞任务处理"></a>阻塞任务处理</h2><p>个人理解，Tokio 的异步运行时主要设计用于处理 I&#x2F;O 密集型任务，这里的阻塞任务更多是支持如文件 I&#x2F;O、CPU 密集型计算等：</p>
+<blockquote>
+<p>阻塞操作会占用异步运行时的工作线程,如果阻塞操作直接在异步运行时执行，会降低整体吞吐量,需要将阻塞操作与异步操作分离，以保持异步运行时的效率。</p>
+</blockquote>
+<h3 id="阻塞线程池"><a href="#阻塞线程池" class="headerlink" title="阻塞线程池"></a>阻塞线程池</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// src/runtime/blocking/pool.rs</span></span><br><span class="line"><span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) <span class="keyword">struct</span> <span class="title class_">BlockingPool</span> &#123;</span><br><span class="line">    spawner: Spawner,</span><br><span class="line">    shutdown_rx: shutdown::Receiver,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[derive(Clone)]</span></span><br><span class="line"><span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) <span class="keyword">struct</span> <span class="title class_">Spawner</span> &#123;</span><br><span class="line">    inner: Arc&lt;Inner&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="任务提交"><a href="#任务提交" class="headerlink" title="任务提交"></a>任务提交</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// src/runtime/blocking/pool.rs</span></span><br><span class="line"><span class="keyword">impl</span> <span class="title class_">Spawner</span> &#123;</span><br><span class="line"> <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) <span class="keyword">fn</span> <span class="title function_">spawn_blocking</span>&lt;F, R&gt;(&amp;<span class="keyword">self</span>, rt: &amp;Handle, func: F) <span class="punctuation">-&gt;</span> JoinHandle&lt;R&gt;</span><br><span class="line"> <span class="keyword">where</span></span><br><span class="line">    F: <span class="title function_ invoke__">FnOnce</span>() <span class="punctuation">-&gt;</span> R + <span class="built_in">Send</span> + <span class="symbol">&#x27;static</span>,</span><br><span class="line">    R: <span class="built_in">Send</span> + <span class="symbol">&#x27;static</span>,</span><br><span class="line"> &#123;</span><br><span class="line">    <span class="comment">// 1. 检查函数大小</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">fn_size</span> = std::mem::size_of::&lt;F&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 2. 根据函数大小决定是用Box装箱</span></span><br><span class="line">    <span class="keyword">let</span> (join_handle, spawn_result) = <span class="keyword">if</span> fn_size &gt; BOX_FUTURE_THRESHOLD &#123;</span><br><span class="line">        <span class="keyword">self</span>.<span class="title function_ invoke__">spawn_blocking_inner</span>(</span><br><span class="line">            <span class="type">Box</span>::<span class="title function_ invoke__">new</span>(func),  <span class="comment">// 大函数装箱</span></span><br><span class="line">            Mandatory::NonMandatory,</span><br><span class="line">            SpawnMeta::<span class="title function_ invoke__">new_unnamed</span>(fn_size),</span><br><span class="line">            rt,</span><br><span class="line">        )</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">self</span>.<span class="title function_ invoke__">spawn_blocking_inner</span>(</span><br><span class="line">            func,  <span class="comment">// 小函数直接传递</span></span><br><span class="line">            Mandatory::NonMandatory,</span><br><span class="line">            SpawnMeta::<span class="title function_ invoke__">new_unnamed</span>(fn_size),</span><br><span class="line">            rt,</span><br><span class="line">        )</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 3. 处理 spawn 结果</span></span><br><span class="line">    <span class="keyword">match</span> spawn_result &#123;</span><br><span class="line">        <span class="title function_ invoke__">Ok</span>(()) =&gt; join_handle,</span><br><span class="line">        <span class="comment">// 兼容性处理：即使运行时正在关闭，也返回 join_handle</span></span><br><span class="line">        <span class="title function_ invoke__">Err</span>(SpawnError::ShuttingDown) =&gt; join_handle,</span><br><span class="line">        <span class="title function_ invoke__">Err</span>(SpawnError::<span class="title function_ invoke__">NoThreads</span>(e)) =&gt; &#123;</span><br><span class="line">            <span class="built_in">panic!</span>(<span class="string">&quot;OS can&#x27;t spawn worker thread: &#123;e&#125;&quot;</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/rust/" rel="tag"># rust</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/03/Android%E6%B8%B2%E6%9F%93%E4%B9%8BSurface%E4%B8%8EANativeWindow/" rel="prev" title="Android独立窗口自绘渲染实现">
+      <i class="fa fa-chevron-left"></i> Android独立窗口自绘渲染实现
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">整体架构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6"><span class="nav-number">2.1.</span> <span class="nav-text">核心组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E5%99%A8%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.2.</span> <span class="nav-text">调度器类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Worker"><span class="nav-number">2.3.</span> <span class="nav-text">Worker</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A1%E9%98%9F%E5%88%97"><span class="nav-number">2.4.</span> <span class="nav-text">任务队列</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Worker%E7%AA%83%E5%8F%96%E7%AE%97%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">Worker窃取算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B"><span class="nav-number">3.1.</span> <span class="nav-text">任务调度流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B7%A5%E4%BD%9C%E7%AA%83%E5%8F%96%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.2.</span> <span class="nav-text">工作窃取实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E4%BC%98%E5%8C%96"><span class="nav-number">4.</span> <span class="nav-text">任务调度优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%98%BB%E5%A1%9E%E4%BB%BB%E5%8A%A1%E5%A4%84%E7%90%86"><span class="nav-number">5.</span> <span class="nav-text">阻塞任务处理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%98%BB%E5%A1%9E%E7%BA%BF%E7%A8%8B%E6%B1%A0"><span class="nav-number">5.1.</span> <span class="nav-text">阻塞线程池</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A1%E6%8F%90%E4%BA%A4"><span class="nav-number">5.2.</span> <span class="nav-text">任务提交</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">y.huang</p>
+  <div class="site-description" itemprop="description">一个需要运动的程序员</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">y.huang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
