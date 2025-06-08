@@ -148,7 +148,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/06/02/rokio%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/06/02/tokio%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -162,7 +162,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2025/06/02/rokio%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/" class="post-title-link" itemprop="url">rokio源码实现简单分析</a>
+            <a href="/2025/06/02/tokio%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/" class="post-title-link" itemprop="url">tokio源码实现简单分析</a>
         </h2>
 
         <div class="post-meta">
@@ -171,10 +171,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2025-06-02 16:41:48 / Modified: 21:21:09" itemprop="dateCreated datePublished" datetime="2025-06-02T16:41:48+08:00">2025-06-02</time>
+              <time title="Created: 2025-06-02 16:41:48" itemprop="dateCreated datePublished" datetime="2025-06-02T16:41:48+08:00">2025-06-02</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-08 21:14:33" itemprop="dateModified" datetime="2025-06-08T21:14:33+08:00">2025-06-08</time>
+              </span>
 
           
 
@@ -187,8 +193,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>待完成</p>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/tokio_classes.png?raw=true"><br>Tokio 是一个 Rust 的异步运行时，它提供了一个完整的异步 I&#x2F;O 框架。其实现在AI Code分析工具，比如Cursor、windsurf等基本都能分析出tokio核心实现，本文并不做八股文总结，仅尝试从任务调度实现角度分析，给出我们可以借鉴的设计思想，其中包括：</p>
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><img src="https://github.com/emile2013/emile2013.github.io/blob/master/imgs/tokio_classes.png?raw=true"><br>Tokio 是一个 Rust 的异步运行时，它提供了一个完整的异步 I&#x2F;O 框架。其实现在AI Code分析工具，比如Cursor、windsurf等基本都能分析出tokio核心实现，本文并不做八股文总结，仅尝试从任务调度实现角度分析，给出我们可以借鉴的设计思想，其中包括：</p>
 <ul>
 <li>工作窃取实现</li>
 <li>任务调度优化</li>
@@ -211,7 +216,7 @@
 <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">rt.<span class="title function_ invoke__">spawn_blocking</span>(|| &#123;</span><br><span class="line">    <span class="comment">// 执行阻塞操作</span></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2025/06/02/rokio%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/#more" rel="contents">
+              <a class="btn" href="/2025/06/02/tokio%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -266,7 +271,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-02 21:21:09" itemprop="dateModified" datetime="2025-06-02T21:21:09+08:00">2025-06-02</time>
+                <time title="Modified: 2025-06-08 11:36:32" itemprop="dateModified" datetime="2025-06-08T11:36:32+08:00">2025-06-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -347,7 +352,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-02 21:21:09" itemprop="dateModified" datetime="2025-06-02T21:21:09+08:00">2025-06-02</time>
+                <time title="Modified: 2025-06-08 11:36:32" itemprop="dateModified" datetime="2025-06-08T11:36:32+08:00">2025-06-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -460,7 +465,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-02 21:21:09" itemprop="dateModified" datetime="2025-06-02T21:21:09+08:00">2025-06-02</time>
+                <time title="Modified: 2025-06-08 11:36:32" itemprop="dateModified" datetime="2025-06-08T11:36:32+08:00">2025-06-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -541,7 +546,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-02 21:21:09" itemprop="dateModified" datetime="2025-06-02T21:21:09+08:00">2025-06-02</time>
+                <time title="Modified: 2025-06-08 11:36:32" itemprop="dateModified" datetime="2025-06-08T11:36:32+08:00">2025-06-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -622,7 +627,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-02 21:21:09" itemprop="dateModified" datetime="2025-06-02T21:21:09+08:00">2025-06-02</time>
+                <time title="Modified: 2025-06-08 11:36:32" itemprop="dateModified" datetime="2025-06-08T11:36:32+08:00">2025-06-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -711,7 +716,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-02 21:21:09" itemprop="dateModified" datetime="2025-06-02T21:21:09+08:00">2025-06-02</time>
+                <time title="Modified: 2025-06-08 11:36:32" itemprop="dateModified" datetime="2025-06-08T11:36:32+08:00">2025-06-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -785,7 +790,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-02 21:21:09" itemprop="dateModified" datetime="2025-06-02T21:21:09+08:00">2025-06-02</time>
+                <time title="Modified: 2025-06-08 11:36:32" itemprop="dateModified" datetime="2025-06-08T11:36:32+08:00">2025-06-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -872,7 +877,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-02 21:21:09" itemprop="dateModified" datetime="2025-06-02T21:21:09+08:00">2025-06-02</time>
+                <time title="Modified: 2025-06-08 11:36:32" itemprop="dateModified" datetime="2025-06-08T11:36:32+08:00">2025-06-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -958,7 +963,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-02 21:21:09" itemprop="dateModified" datetime="2025-06-02T21:21:09+08:00">2025-06-02</time>
+                <time title="Modified: 2025-06-08 11:36:32" itemprop="dateModified" datetime="2025-06-08T11:36:32+08:00">2025-06-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
